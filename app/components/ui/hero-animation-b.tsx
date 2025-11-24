@@ -1,0 +1,90 @@
+import { motion } from "framer-motion"
+
+interface HeroAnimationBProps {
+  title: string
+  subtitle: string
+  animationKey?: string | number
+}
+
+export function HeroAnimationB({
+  title,
+  subtitle,
+  animationKey,
+}: HeroAnimationBProps) {
+  const titleChars = title.split("")
+  const words = subtitle.split(" ")
+
+  return (
+    <div className="flex flex-col items-center gap-[4px] text-center">
+      <h1
+        key={`${animationKey}-title`}
+        className="font-nohemi text-[60px] text-center leading-[1.1] whitespace-pre-line min-h-[150px]"
+      >
+        {titleChars.map((char, index) => {
+          if (char === "\n") {
+            return <br key={`br-${index}`} />
+          }
+
+          return (
+            <motion.span
+              key={`${char}-${index}`}
+              initial={{ fontWeight: 100, opacity: 0, filter: "blur(16px)" }}
+              animate={{ fontWeight: 600, opacity: 1, filter: "blur(0px)" }}
+              transition={{
+                delay: 0.03 * index,
+                type: "spring",
+                stiffness: 50,
+                damping: 20,
+                filter: {
+                  type: "spring",
+                  stiffness: 60,
+                  damping: 20,
+                  delay: 0.03 * index,
+                },
+                fontWeight: {
+                  type: "spring",
+                  stiffness: 50,
+                  damping: 30,
+                  delay: 0.05 * index,
+                },
+              }}
+              style={{ display: "inline-block", whiteSpace: "pre" }}
+            >
+              {char}
+            </motion.span>
+          )
+        })}
+      </h1>
+
+      <h2
+        key={`${animationKey}-subtitle`}
+        className="text-xl font-[500] font-manrope"
+      >
+        {words.map((word, index) => (
+          <motion.span
+            key={`${word}-${index}`}
+            initial={{ opacity: 0, filter: "blur(16px)" }}
+            animate={{ opacity: 0.4, filter: "blur(0px)" }}
+            transition={{
+              filter: {
+                type: "spring",
+                stiffness: 30,
+                damping: 10,
+                delay: 1 + index * 0.05,
+              },
+              opacity: {
+                duration: 1.6,
+                ease: "easeInOut",
+                delay: 1 + index * 0.05,
+              },
+            }}
+            style={{ display: "inline-block", marginRight: "0.25em" }}
+          >
+            {word}
+          </motion.span>
+        ))}
+      </h2>
+    </div>
+  )
+}
+
