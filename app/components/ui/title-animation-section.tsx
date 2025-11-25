@@ -44,7 +44,7 @@ export function TitleAnimationSection() {
   let wordCounter = 0
 
   return (
-    <section className="relative h-screen w-full bg-zinc-100 dark:bg-zinc-900">
+    <section className="relative h-screen w-full bg-[#0b0b0b]">
       <div className="flex flex-col h-full w-full items-center justify-center text-zinc-400 gap-[56px]">
         <div className="flex flex-col items-start w-full max-w-[720px] mx-auto gap-0">
           <h1

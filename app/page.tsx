@@ -9,7 +9,7 @@ export default function Home() {
       <HeroSection />
       <TitleAnimationSection />
 
-      <section className="relative h-screen w-full bg-zinc-50 dark:bg-zinc-950">
+      <section className="relative h-screen w-full bg-[#050505]">
         <div className="flex h-full w-full items-center justify-center text-zinc-400">
           <span>Animation Area</span>
         </div>

@@ -19,7 +19,7 @@ export function HeroSection() {
   };
 
   return (
-    <section className="relative h-screen w-full bg-zinc-50 dark:bg-zinc-950">
+    <section className="relative h-screen w-full bg-[#050505]">
       <div className="flex flex-col h-full w-full items-center justify-center text-zinc-400 gap-[64px]">
         {animationMode === "A" ? (
           <HeroAnimationA
@@ -90,7 +90,7 @@ export function HeroSection() {
             }}
             animate={{
               filter: "blur(40px)",
-              opacity: 0.6,
+              opacity: 0.8,
               width: "836px",
               
               transform: "translateY(30px)",
