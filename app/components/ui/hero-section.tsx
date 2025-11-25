@@ -19,7 +19,7 @@ export function HeroSection() {
   };
 
   return (
-    <section className="relative h-screen w-full bg-[#f4f5f5] border-b border-white/60">
+    <section className="relative h-screen w-full bg-[#f4f4f5] border-b border-white/60">
       <div className="flex flex-col h-full w-full items-center justify-center text-slate-700 gap-[64px] p-10">
         {animationMode === "A" ? (
           <HeroAnimationA
