@@ -44,8 +44,8 @@ export function TitleAnimationSection() {
   let wordCounter = 0
 
   return (
-    <section className="relative h-screen w-full bg-[#0b0b0b]">
-      <div className="flex flex-col h-full w-full items-center justify-center text-zinc-400 gap-[56px]">
+    <section className="relative h-screen w-full bg-white border-b border-black/5">
+      <div className="flex flex-col h-full w-full items-center justify-center text-slate-700 gap-[56px]">
         <div className="flex flex-col items-start w-full max-w-[720px] mx-auto gap-0">
           <h1
             ref={titleRef}
@@ -113,7 +113,7 @@ export function TitleAnimationSection() {
             }}
             initial="hidden"
             animate={controls}
-            className="h-[35px] w-[155px] rounded-[999px] bg-white/10"
+            className="h-[35px] w-[155px] rounded-[999px] bg-black"
           />
         </div>
 

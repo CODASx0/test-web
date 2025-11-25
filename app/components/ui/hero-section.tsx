@@ -19,8 +19,8 @@ export function HeroSection() {
   };
 
   return (
-    <section className="relative h-screen w-full bg-[#050505]">
-      <div className="flex flex-col h-full w-full items-center justify-center text-zinc-400 gap-[64px]">
+    <section className="relative h-screen w-full bg-[#f4f5f5] border-b border-white/60">
+      <div className="flex flex-col h-full w-full items-center justify-center text-slate-700 gap-[64px] p-10">
         {animationMode === "A" ? (
           <HeroAnimationA
             key={`hero-animation-a-${key}`}
@@ -44,27 +44,28 @@ export function HeroSection() {
           />
         )}
 
-        <div className="relative mt-6 flex w-full justify-center">
+        {/* 这一部分没有做宽度自适应，用绝对值来的，需要优化 */}
+
+        <div className="relative mt-6 flex justify-center">
           <motion.div
             key={`hero-panel-${animationMode}-${key}`}
             initial={{
               opacity: 0,
               filter: "blur(30px)",
-              width: "calc(100% - 200px)",
-              maxWidth: "756px",
+              width: "756px",
+              
             }}
             animate={{
               opacity: 1,
               filter: "blur(0px)",
               height: "165px",
-              width: "100%",
-              maxWidth: "956px",
+              width: "956px",
             }}
             transition={{
               duration: 0.8,
               ease: "easeOut",
               delay: animationMode === "A" ? 0.6 : 0.4,
-              maxWidth: {
+              width: {
                 type: "spring",
                 stiffness: 40,
                 damping: 30,
@@ -77,7 +78,7 @@ export function HeroSection() {
                 delay: animationMode === "A" ? 0.6 : 0.4,
               },
             }}
-            className="relative z-10 h-[165px] rounded-[32px] bg-black/90"
+            className="relative z-10 h-[165px] rounded-[32px] bg-white/90"
           />
 
           <motion.div
@@ -90,7 +91,7 @@ export function HeroSection() {
             }}
             animate={{
               filter: "blur(40px)",
-              opacity: 0.8,
+              opacity: 1,
               width: "836px",
               
               transform: "translateY(30px)",
@@ -119,7 +120,7 @@ export function HeroSection() {
       </div>
 
       <div className="absolute top-0 left-0 z-10 flex items-center gap-6 p-4">
-        <h2 className="text-xl font-[550] font-nohemi">Hero Animation</h2>
+        <h2 className="text-xl font-[550] w-full font-nohemi">Hero Animation</h2>
 
         <div className="flex items-center gap-4">
           <motion.button
