@@ -17,6 +17,6 @@ export default function Home() {
           <h2 className="text-xl font-[550] font-nohemi">Section 3 (Nothing yet)</h2>
         </div>
       </section>
-    </main>
+      </main>
   );
 }

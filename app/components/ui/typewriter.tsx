@@ -64,8 +64,8 @@ const Typewriter = ({
 
         if (index >= text.length) {
           setIsTyping(false)
-          return
-        }
+            return
+          }
 
         const nextChar = text[index]
         const isBoundary = nextChar === " " || nextChar === "\n" || nextChar === "\t" || nextChar === undefined
@@ -96,8 +96,8 @@ const Typewriter = ({
     return () => {
       if (timeout) {
         clearTimeout(timeout)
+        }
       }
-    }
   }, [text, charDelay, wordDelay, lineDelay, charDelayJitter, initialDelay])
 
   useEffect(() => {
@@ -137,7 +137,7 @@ const Typewriter = ({
 
             const symbol = char === " " ? "\u00A0" : char
             return (
-              <motion.span
+        <motion.span
                 key={`char-${idx}-${symbol}`}
                 initial={{ fontWeight: 100 }}
                   animate={{ fontWeight: 600 }}

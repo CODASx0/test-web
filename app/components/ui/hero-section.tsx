@@ -44,40 +44,78 @@ export function HeroSection() {
           />
         )}
 
-        <motion.div
-          key={`hero-panel-${animationMode}-${key}`}
-          initial={{
-            opacity: 0,
-            filter: "blur(30px)",
-            height: "150px",
-            maxWidth: "876px",
-          }}
-          animate={{
-            opacity: 1,
-            filter: "blur(0px)",
-            height: "165px",
-            width: "100%",
-            maxWidth: "956px",
-          }}
-          transition={{
-            duration: 0.8,
-            ease: "easeOut",
-            delay: animationMode === "A" ? 0.6 : 0.4,
-            maxWidth: {
-              type: "spring",
-              stiffness: 40,
-              damping: 30,
+        <div className="relative mt-6 flex w-full justify-center">
+          <motion.div
+            key={`hero-panel-${animationMode}-${key}`}
+            initial={{
+              opacity: 0,
+              filter: "blur(30px)",
+              width: "calc(100% - 200px)",
+              maxWidth: "756px",
+            }}
+            animate={{
+              opacity: 1,
+              filter: "blur(0px)",
+              height: "165px",
+              width: "100%",
+              maxWidth: "956px",
+            }}
+            transition={{
+              duration: 0.8,
+              ease: "easeOut",
               delay: animationMode === "A" ? 0.6 : 0.4,
-            },
-            height: {
+              maxWidth: {
+                type: "spring",
+                stiffness: 40,
+                damping: 30,
+                delay: animationMode === "A" ? 0.6 : 0.4,
+              },
+              height: {
+                type: "spring",
+                stiffness: 40,
+                damping: 30,
+                delay: animationMode === "A" ? 0.6 : 0.4,
+              },
+            }}
+            className="relative z-10 h-[165px] rounded-[32px] bg-black/90"
+          />
+
+          <motion.div
+            key={`hero-panel-layer-${animationMode}-${key}`}
+            initial={{
+              filter: "blur(100px)",
+              opacity: 0,
+              width: "556px",
+              
+            }}
+            animate={{
+              filter: "blur(40px)",
+              opacity: 0.6,
+              width: "836px",
+              
+              transform: "translateY(30px)",
+            }}
+            transition={{
               type: "spring",
-              stiffness: 40,
-              damping: 30,
-              delay: animationMode === "A" ? 0.6 : 0.4,
-            },
-          }}
-          className="mt-6 h-[165px] w-full max-w-[956px] rounded-[32px] bg-white/5"
-        />
+                stiffness: 40,
+                damping: 20,
+              delay: 1.6,
+            }}
+            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-0"
+          >
+            <div className="h-[105px] w-full rounded-[36px] overflow-hidden">
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="h-full w-full object-cover"
+              >
+                <source src="/layer.mp4" type="video/mp4" />
+              </video>
+            </div>
+          </motion.div>
+        </div>
       </div>
 
       <div className="absolute top-0 left-0 z-10 flex items-center gap-6 p-4">
