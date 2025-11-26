@@ -1,7 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState, ChangeEvent, useMemo } from "react"
-import { Settings, Play, Circle, Download, X, Upload, Type, Image as ImageIcon, RotateCcw, Plus, Trash2, ChevronRight, Layers, Clock, Activity, MoveHorizontal } from "lucide-react"
+import { useCallback, useEffect, useRef, useState, ChangeEvent } from "react"
+import { Settings, Play, Circle, Download, X, Upload, RotateCcw, Plus, Trash2 } from "lucide-react"
 import { clsx } from "clsx"
 
 // --- 类型定义 ---
@@ -503,36 +503,40 @@ export function HeroAnimationCanvas({ title: initialTitle }: { title: string }) 
   // --- 渲染引擎逻辑 ---
 
   // 获取某个属性在特定时间点的值
+  // 核心逻辑：每个字符独立维护时间轨道，阶段之间串行执行
+  // 阶段N的开始时间 = 该字符阶段N-1的结束时间 + 阶段N的延迟
   const getPropertyValue = useCallback((timeline: PropertyTimeline, charIndex: number, totalChars: number, elapsed: number) => {
     if (!timeline.enabled) return timeline.staticValue
     
     let currentValue = timeline.initialValue
-    let timeConsumed = 0 // 累积消耗的时间
+    // 该字符已完成的时间基准点（上一阶段结束的时间）
+    let charPreviousStageEndTime = 0
 
     for (const stage of timeline.stages) {
-      // 使用新的延迟计算系统
+      // 计算该字符在该阶段的延迟时间
+      // 这个延迟是相对于上一阶段结束后的等待时间
       const charDelay = calculateCharDelay(stage.delay, charIndex, totalChars)
+      
+      // 该阶段对于该字符的开始时间 = 上一阶段结束时间 + 该阶段的延迟
+      const stageStartTime = charPreviousStageEndTime + charDelay
+      
+      // 计算该阶段内的本地时间（秒）
+      const localT = (elapsed - stageStartTime) / 1000
 
-      const stageStartTime = timeConsumed + charDelay
-      const localT = (elapsed - stageStartTime) / 1000 // 转换为秒
-
-      // 如果还没到这个阶段的开始时间，就停留在上一个值
+      // 如果还没到这个阶段的开始时间，停留在上一个值
       if (localT < 0) {
         return currentValue 
       }
 
-      // 计算阶段持续时间
+      // 计算该阶段的动画持续时间
       let stageDuration = 0 // ms
       if (stage.type === "bezier") {
         stageDuration = stage.bezier.duration
       } else {
-        // 估算弹簧时间，虽然弹簧理论上无限，但我们需要一个切入下一阶段的点
-        // 这里简单使用一个固定值 + 估算，或者对于 Spring 来说，如果是 Timeline 模式，
-        // 我们通常认为它在 settling time 后结束。
         stageDuration = estimateSpringDuration(stage.spring)
       }
 
-      // 如果在这个阶段的时间窗口内
+      // 如果在这个阶段的时间窗口内（动画正在进行中）
       if (elapsed < stageStartTime + stageDuration) {
         if (stage.type === "bezier") {
           const progress = Math.min(localT * 1000 / stage.bezier.duration, 1)
@@ -543,22 +547,12 @@ export function HeroAnimationCanvas({ title: initialTitle }: { title: string }) 
         }
       }
 
-      // 阶段结束，更新基准值和累积时间
+      // 阶段结束，更新基准值
       currentValue = stage.targetValue
-      // 下一阶段的基准时间点：在这个设计里，下一阶段是紧接着上一阶段 *该字符完成动画* 后开始
-      // 或者是所有字符都开始后？通常 Timeline 是串行的。
-      // 简化模型：每个 Stage 独立结算。
-      timeConsumed += charDelay + stageDuration
-      // 注意：这里 timeConsumed 逻辑有点复杂。如果 Stage 2 也是 linear delay，它是基于 Stage 1 结束时间的。
-      // 这里的实现是：Stage N 的 start = Stage N-1 的 end。
-      // 上面的 timeConsumed 已经包含了 charDelay，所以对吗？
-      // timeConsumed (Start of Stage 2) = Start of Stage 1 + Duration of Stage 1.
-      // 修正：timeConsumed 应该是该字符到达当前状态所需的基础时间
-      // 下一个循环的 delay 应该只包含 baseDelay? 
-      // 让我们简化：stages 是串行的。Stage 2 的 delay 是相对于 Stage 1 完成后的等待时间。
-      timeConsumed = stageStartTime + stageDuration - charDelay // 回退 delay，因为下个 loop 会加下个 delay
-      // 实际上最简单的逻辑：
-      // StartTime_Stage_N = EndTime_Stage_N-1 + Delay_Stage_N
+      
+      // 更新该字符的阶段结束时间基准点
+      // 下一阶段将基于这个时间点来计算开始时间
+      charPreviousStageEndTime = stageStartTime + stageDuration
     }
 
     return currentValue
