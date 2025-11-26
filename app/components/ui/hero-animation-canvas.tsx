@@ -437,19 +437,22 @@ export function HeroAnimationCanvas({ title: initialTitle }: { title: string }) 
       wait: 0,
       stagger: 300,  // 10个字符 * 30ms
       curve: "linear",
-      spring: { stiffness: 100, damping: 15, mass: 1 }
+      spring: { stiffness: 100, damping: 15, mass: 1 },
+      origin: 0
     }
     const defaultDelayWeight: DelayParams = {
       wait: 0,
       stagger: 500,  // 10个字符 * 50ms
       curve: "linear",
-      spring: { stiffness: 100, damping: 15, mass: 1 }
+      spring: { stiffness: 100, damping: 15, mass: 1 },
+      origin: 0
     }
     const defaultDelayBlur: DelayParams = {
       wait: 0,
       stagger: 300,  // 10个字符 * 30ms
       curve: "linear",
-      spring: { stiffness: 100, damping: 15, mass: 1 }
+      spring: { stiffness: 100, damping: 15, mass: 1 },
+      origin: 0
     }
     
     setConfig(prev => ({
