@@ -90,7 +90,7 @@ export function TitleAnimationSection() {
             ))}
           </h1>
 
-          <motion.div
+          <motion.button
             variants={{
               hidden: {
                 opacity: 0,
@@ -99,7 +99,7 @@ export function TitleAnimationSection() {
                 transition: { duration: 0.25, ease: "easeOut" },
               },
               visible: {
-                opacity: 0.8,
+                opacity: 1,
                 y: 0,
                 filter: "blur(0px)",
                 transition: {
@@ -113,8 +113,26 @@ export function TitleAnimationSection() {
             }}
             initial="hidden"
             animate={controls}
-            className="h-[35px] w-[155px] rounded-[999px] bg-black"
-          />
+            className="flex items-center gap-2 rounded-[999px] bg-black px-4 py-[5px] font-manrope text-white transition-opacity hover:opacity-80"
+          >
+            <span>Start For Free</span>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="inline-block"
+            >
+              <path
+                d="M4 12L12 4M12 4H6M12 4V10"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </motion.button>
         </div>
 
         

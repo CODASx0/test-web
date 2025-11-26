@@ -140,7 +140,7 @@ const Typewriter = ({
         <motion.span
                 key={`char-${idx}-${symbol}`}
                 initial={{ fontWeight: 100 }}
-                  animate={{ fontWeight: 600 }}
+                animate={{ fontWeight: 600 }}
                 transition={{
                   type: "spring", 
                   stiffness: 200,
