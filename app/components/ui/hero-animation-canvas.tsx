@@ -1,7 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState, ChangeEvent, useMemo } from "react"
-import { Settings, Play, Circle, Download, X, Upload, Type, Image as ImageIcon, RotateCcw, Plus, Trash2, ChevronRight, Layers, Clock, Activity, MoveHorizontal } from "lucide-react"
+import { useCallback, useEffect, useRef, useState, ChangeEvent } from "react"
+import { Settings, Play, Circle, Download, X, Upload, RotateCcw, Plus, Trash2 } from "lucide-react"
 import { clsx } from "clsx"
 
 // --- 类型定义 ---
