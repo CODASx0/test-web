@@ -34,6 +34,8 @@ interface DelayParams {
   curve: DelayCurveType
   // 弹簧曲线参数（用于延迟分布，仅当 curve 为 spring 时有效）
   spring: SpringParams
+  // 动画起始中心点 (0-1)，0=左边开始，0.5=中心向两边扩散，1=右边开始
+  origin: number
 }
 
 interface AnimationStage {
@@ -87,7 +89,8 @@ const DEFAULT_DELAY: DelayParams = {
   wait: 0,        
   stagger: 100,   
   curve: "linear",
-  spring: { stiffness: 100, damping: 15, mass: 1 }
+  spring: { stiffness: 100, damping: 15, mass: 1 },
+  origin: 0  // 默认从左边开始
 }
 
 const createStage = (target: number): AnimationStage => ({
@@ -157,11 +160,23 @@ function applyDelayCurve(normalizedPos: number, curveType: DelayCurveType, sprin
 
 // 计算字符在特定阶段的延迟时间
 function calculateCharDelay(delay: DelayParams, charIndex: number, totalChars: number): number {
-  // 默认使用线性归一化位置 (0-1)
-  const normalizedPos = charIndex / (Math.max(totalChars - 1, 1))
+  const origin = delay.origin ?? 0
+  const maxChars = Math.max(totalChars - 1, 1)
+  
+  // 计算字符相对于起始点的距离（归一化到 0-1）
+  // origin=0: 从左边开始，距离就是 charIndex/maxChars
+  // origin=0.5: 从中心开始，距离是到中心的距离 * 2（因为最远距离是0.5）
+  // origin=1: 从右边开始，距离是 (maxChars - charIndex)/maxChars
+  const charNormalized = charIndex / maxChars
+  const distance = Math.abs(charNormalized - origin)
+  
+  // 归一化距离，使得最远的字符距离为1
+  // 最远距离 = max(origin, 1 - origin)
+  const maxDistance = Math.max(origin, 1 - origin)
+  const normalizedDistance = maxDistance > 0 ? distance / maxDistance : 0
   
   // 应用延迟曲线映射
-  const curvedPos = applyDelayCurve(normalizedPos, delay.curve, delay.spring)
+  const curvedPos = applyDelayCurve(normalizedDistance, delay.curve, delay.spring)
   
   // 计算最终延迟
   // 等待时间 + 曲线映射后的交错时间
@@ -321,7 +336,7 @@ const BezierGraph = ({ params }: { params: BezierParams }) => {
   return <canvas ref={canvasRef} width={120} height={120} className="w-full h-auto bg-white rounded border border-neutral-100" />
 }
 
-const StaggerGraph = ({ curve, spring }: { curve: DelayCurveType, spring: SpringParams }) => {
+const StaggerGraph = ({ curve, spring, origin = 0 }: { curve: DelayCurveType, spring: SpringParams, origin?: number }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -345,37 +360,39 @@ const StaggerGraph = ({ curve, spring }: { curve: DelayCurveType, spring: Spring
     ctx.lineTo(width - padding, height - padding)
     ctx.stroke()
     
-    // Draw Bars (to visualize discrete chars)
+    // Draw origin indicator line
+    const originX = padding + origin * drawWidth
+    ctx.strokeStyle = "#f97316"
+    ctx.setLineDash([3, 3])
+    ctx.beginPath()
+    ctx.moveTo(originX, padding)
+    ctx.lineTo(originX, height - padding)
+    ctx.stroke()
+    ctx.setLineDash([])
+    
+    // Draw Bars (to visualize discrete chars with origin-based delay)
     const totalChars = 20
     const barWidth = (drawWidth / totalChars) * 0.6
+    const maxDistance = Math.max(origin, 1 - origin)
     
     for (let i = 0; i < totalChars; i++) {
-        const normalizedPos = i / (totalChars - 1)
-        const val = applyDelayCurve(normalizedPos, curve, spring)
+        const charNormalized = i / (totalChars - 1)
+        const distance = Math.abs(charNormalized - origin)
+        const normalizedDistance = maxDistance > 0 ? distance / maxDistance : 0
+        const val = applyDelayCurve(normalizedDistance, curve, spring)
         
         const barHeight = val * drawHeight
         const x = padding + (i / (totalChars - 1)) * drawWidth
         const y = height - padding - barHeight
         
-        ctx.fillStyle = "#3b82f6"
+        // 靠近origin的字符用橙色高亮
+        const distFromOrigin = Math.abs(charNormalized - origin)
+        const isNearOrigin = distFromOrigin < 0.1
+        ctx.fillStyle = isNearOrigin ? "#f97316" : "#3b82f6"
         ctx.fillRect(x - barWidth/2, y, barWidth, barHeight)
     }
-    
-    // Draw Curve Line
-    ctx.beginPath()
-    ctx.strokeStyle = "rgba(59, 130, 246, 0.5)"
-    ctx.lineWidth = 1
-    for (let i = 0; i <= 50; i++) {
-        const norm = i / 50
-        const val = applyDelayCurve(norm, curve, spring)
-        const x = padding + norm * drawWidth
-        const y = height - padding - val * drawHeight
-        if (i===0) ctx.moveTo(x, y)
-        else ctx.lineTo(x, y)
-    }
-    ctx.stroke()
 
-  }, [curve, spring])
+  }, [curve, spring, origin])
 
   return <canvas ref={canvasRef} width={240} height={60} className="w-full h-16 bg-white rounded border border-neutral-100" />
 }
@@ -406,7 +423,7 @@ export function HeroAnimationCanvas({ title: initialTitle }: { title: string }) 
     text: initialTitle,
     align: "center",
     fontFamily: "Nohemi, system-ui, sans-serif",
-    opacity: { initialValue: 0, staticValue: 1, enabled: true, stages: [createStage(1)] },
+    opacity: { initialValue: 0, staticValue: 100, enabled: true, stages: [createStage(100)] },
     weight: { initialValue: 100, staticValue: 400, enabled: true, stages: [createStage(600)] },
     blur: { initialValue: 16, staticValue: 0, enabled: true, stages: [createStage(0)] },
     fontSize: { initialValue: 60, staticValue: 60, enabled: true, stages: [] },
@@ -437,12 +454,12 @@ export function HeroAnimationCanvas({ title: initialTitle }: { title: string }) 
     
     setConfig(prev => ({
       ...prev,
-      // 默认 Opacity 动画
+      // 默认 Opacity 动画 (百分比 0-100)
       opacity: {
         initialValue: 0,
-        staticValue: 1,
+        staticValue: 100,
         enabled: true,
-        stages: [{ ...createStage(1), delay: defaultDelayOpacity, spring: { stiffness: 50, damping: 20, mass: 1 } }]
+        stages: [{ ...createStage(100), delay: defaultDelayOpacity, spring: { stiffness: 50, damping: 20, mass: 1 } }]
       },
       // 默认 Weight 动画
       weight: {
@@ -633,7 +650,7 @@ export function HeroAnimationCanvas({ title: initialTitle }: { title: string }) 
           ctx.filter = "none"
         }
 
-        ctx.fillStyle = `rgba(15, 15, 15, ${Math.max(0, Math.min(1, charInfo.opacity))})`
+        ctx.fillStyle = `rgba(15, 15, 15, ${Math.max(0, Math.min(1, charInfo.opacity / 100))})`
         
         // 绘制字符
         ctx.fillText(charInfo.char, cursorX, lineCenterY)
@@ -1011,12 +1028,17 @@ export function HeroAnimationCanvas({ title: initialTitle }: { title: string }) 
                         </label>
                         <span className="text-xs font-medium text-neutral-600">初始值 (Initial)</span>
                       </div>
-                      <input 
-                        type="number" 
-                        value={config[animSubTab].enabled ? config[animSubTab].initialValue : config[animSubTab].staticValue} 
-                        onChange={e => updateTimeline(animSubTab, tl => ({ ...tl, [config[animSubTab].enabled ? 'initialValue' : 'staticValue']: +e.target.value }))}
-                        className="w-24 px-2 py-1.5 text-xs border border-neutral-200 rounded-md focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400/20 transition-all bg-white text-right font-mono"
-                      />
+                      <div className="flex items-center gap-1">
+                        <input 
+                          type="number" 
+                          value={config[animSubTab].enabled ? config[animSubTab].initialValue : config[animSubTab].staticValue} 
+                          onChange={e => updateTimeline(animSubTab, tl => ({ ...tl, [config[animSubTab].enabled ? 'initialValue' : 'staticValue']: +e.target.value }))}
+                          className="w-20 px-2 py-1.5 text-xs border border-neutral-200 rounded-md focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400/20 transition-all bg-white text-right font-mono"
+                        />
+                        <span className="text-[10px] text-neutral-400 w-6">
+                          {{ opacity: "%", weight: "", blur: "px", fontSize: "px", lineHeight: "", letterSpacing: "px" }[animSubTab]}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
@@ -1030,12 +1052,17 @@ export function HeroAnimationCanvas({ title: initialTitle }: { title: string }) 
                             <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">{idx + 1}</div>
                             <span>目标值 (Target)</span>
                           </div>
-                          <input 
-                            type="number" 
-                            value={stage.targetValue}
-                            onChange={e => updateStage(animSubTab, idx, s => ({ ...s, targetValue: +e.target.value }))}
-                            className="w-24 px-2 py-1.5 text-xs border border-neutral-200 rounded-md focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400/20 transition-all bg-white text-right font-mono"
-                          />
+                          <div className="flex items-center gap-1">
+                            <input 
+                              type="number" 
+                              value={stage.targetValue}
+                              onChange={e => updateStage(animSubTab, idx, s => ({ ...s, targetValue: +e.target.value }))}
+                              className="w-20 px-2 py-1.5 text-xs border border-neutral-200 rounded-md focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400/20 transition-all bg-white text-right font-mono"
+                            />
+                            <span className="text-[10px] text-neutral-400 w-6">
+                              {{ opacity: "%", weight: "", blur: "px", fontSize: "px", lineHeight: "", letterSpacing: "px" }[animSubTab]}
+                            </span>
+                          </div>
                         </div>
 
                         {/* Animation Curve Settings */}
@@ -1182,8 +1209,32 @@ export function HeroAnimationCanvas({ title: initialTitle }: { title: string }) 
                                     </div>
                                 )}
                                 
+                                {/* Origin Slider */}
+                                <div className="pt-3 mt-3 border-t border-neutral-100">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <label className="text-neutral-400 text-[10px]">动画起始位置</label>
+                                      <span className="text-[10px] font-mono text-neutral-500">{Math.round((stage.delay.origin ?? 0) * 100)}%</span>
+                                    </div>
+                                    <div className="relative">
+                                      <input 
+                                        type="range" 
+                                        min="0" 
+                                        max="1" 
+                                        step="0.01"
+                                        value={stage.delay.origin ?? 0}
+                                        onChange={e => updateStage(animSubTab, idx, s => ({ ...s, delay: { ...s.delay, origin: +e.target.value } }))}
+                                        className="w-full h-1.5 bg-neutral-200 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-orange-500 [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white"
+                                      />
+                                      <div className="flex justify-between text-[9px] text-neutral-400 mt-1">
+                                        <span>← 左</span>
+                                        <span>中心</span>
+                                        <span>右 →</span>
+                                      </div>
+                                    </div>
+                                </div>
+                                
                                 <div className="pt-2">
-                                    <StaggerGraph curve={stage.delay.curve} spring={stage.delay.spring} />
+                                    <StaggerGraph curve={stage.delay.curve} spring={stage.delay.spring} origin={stage.delay.origin ?? 0} />
                                 </div>
                             </div>
                         </div>
