@@ -1209,7 +1209,7 @@ export function HeroAnimationCanvas({ title: initialTitle }: { title: string }) 
                                 {/* Origin Slider */}
                                 <div className="pt-3 mt-3 border-t border-neutral-100">
                                     <div className="flex items-center justify-between mb-2">
-                                      <label className="text-neutral-400 text-[10px]">动画起始位置</label>
+                                      <label className="text-neutral-400 text-[10px]">动画起始位置 <span className="text-orange-500">({config.text.replace(/\n/g, "").length} 字符)</span></label>
                                       <span className="text-[10px] font-mono text-neutral-500">{Math.round((stage.delay.origin ?? 0) * 100)}%</span>
                                     </div>
                                     <div className="relative">
