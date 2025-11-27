@@ -7,11 +7,11 @@ import { HeroAnimationCanvas } from "./components/ui/hero-animation-canvas";
 export default function Home() {
   return (
     <main className="w-full">
-      <section className="relative h-screen w-full bg-[#f8f6f2] border-t border-black/5">
+      {/* <section className="relative h-screen w-full bg-[#f8f6f2] border-t border-black/5">
         <HeroAnimationCanvas
           title={"Design for Love"}
         />
-      </section>
+      </section> */}
 
       <HeroSection />
       <TitleAnimationSection />
