@@ -46,8 +46,8 @@ export function HeroAnimationA({
             transition={{
               filter: {
                 type: "spring",
-                stiffness: 30,
-                damping: 10,
+                bounce: 0,
+                duration: 1,
                 delay: 3 + index * 0.1,
               },
               opacity: {

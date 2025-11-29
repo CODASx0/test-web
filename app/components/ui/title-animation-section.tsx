@@ -81,6 +81,7 @@ export function TitleAnimationSection() {
                       initial="hidden"
                       animate={controls}
                       className="inline-block mr-3"
+                      style={{ willChange: "transform, opacity, filter" }}
                     >
                       {word}
                     </motion.span>

@@ -21,7 +21,7 @@ export function HeroSection() {
   return (
     <section className="relative h-screen w-full bg-[#f4f4f5] border-b border-white/60">
       <div className="flex flex-col h-full w-full items-center justify-center text-slate-700 gap-[64px] p-10">
-        {animationMode === "A" ? (
+        {animationMode === "B" ? (
           <HeroAnimationA
             key={`hero-animation-a-${key}`}
             title={HERO_TITLE}
@@ -67,14 +67,14 @@ export function HeroSection() {
               delay: animationMode === "A" ? 0.6 : 0.4,
               width: {
                 type: "spring",
-                stiffness: 40,
-                damping: 30,
+                bounce: 0,
+                duration: 1,
                 delay: animationMode === "A" ? 0.6 : 0.4,
               },
               height: {
                 type: "spring",
-                stiffness: 40,
-                damping: 30,
+                bounce: 0,
+                duration: 1,
                 delay: animationMode === "A" ? 0.6 : 0.4,
               },
             }}
@@ -98,8 +98,8 @@ export function HeroSection() {
             }}
             transition={{
               type: "spring",
-                stiffness: 40,
-                damping: 20,
+              bounce: 0,
+              duration: 1,
               delay: 1.6,
             }}
             className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-0"
@@ -123,27 +123,29 @@ export function HeroSection() {
         <h2 className="text-xl font-[550] w-full font-nohemi">Hero Animation</h2>
 
         <div className="flex items-center gap-4">
-          <motion.button
+        <motion.button
             onClick={() => handleReload("A")}
-            className="text-xl font-nohemi text-zinc-900 opacity-50 dark:text-zinc-100 transition-opacity"
+            className="text-xl font-nohemi text-zinc-900 opacity-50 dark:text-zinc-100 transition-opacity whitespace-nowrap w-fit"
             initial={{ fontWeight: 300 }}
             whileHover={{ fontWeight: 600, opacity: 0.8 }}
             whileTap={{ fontWeight: 200, opacity: 0.1 }}
-            aria-label="Reload Animation A"
+            aria-label="Default(Plan B)"
           >
-            Reload(A)
+            Default(Plan B)
           </motion.button>
 
           <motion.button
             onClick={() => handleReload("B")}
-            className="text-xl font-nohemi text-zinc-900 opacity-50 dark:text-zinc-100 transition-opacity"
+            className="text-xl font-nohemi text-zinc-900 opacity-50 dark:text-zinc-100 transition-opacity whitespace-nowrap w-fit"
             initial={{ fontWeight: 300 }}
             whileHover={{ fontWeight: 600, opacity: 0.8 }}
             whileTap={{ fontWeight: 200, opacity: 0.1 }}
-            aria-label="Reload Animation B"
+            aria-label="Reload(Plan A)"
           >
-            Reload(B)
+            Reload(Plan A)
           </motion.button>
+
+          
         </div>
       </div>
     </section>
