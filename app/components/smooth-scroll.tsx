@@ -48,6 +48,13 @@ export function SmoothScroll({ children }: { children: React.ReactNode }) {
       // 阻止原生滚动
       e.preventDefault();
 
+      // 同步外部滚动位置（如点击导航跳转后的位置）
+      // 如果 window.scrollY 与内部状态差距较大，说明有外部滚动发生
+      if (Math.abs(window.scrollY - state.current) > 1) {
+        state.current = window.scrollY;
+        state.target = window.scrollY;
+      }
+
       // 计算最大滚动距离
       const maxScroll = document.body.scrollHeight - window.innerHeight;
 

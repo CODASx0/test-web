@@ -48,24 +48,24 @@ function LinkArrowButton({ children }: { children: React.ReactNode }) {
 
   return (
     <motion.button
-      className="group relative flex items-center justify-center bg-black font-manrope font-bold text-white cursor-pointer"
+      className="group relative flex items-center justify-center bg-linear-to-r from-[#212121] to-[#000000] font-manrope font-bold text-white cursor-pointer"
       initial="rest"
       whileHover="hover"
       animate="rest"
       variants={{
-        rest: { 
-          paddingLeft: 16, 
-          paddingRight: 12, 
-          paddingTop: 6, 
-          paddingBottom: 6, 
+        rest: {
+          paddingLeft: 16,
+          paddingRight: 14,
+          paddingTop: 6,
+          paddingBottom: 6,
           borderRadius: 20,
         },
-        hover: { 
-          paddingLeft: 10, 
-          paddingRight: 16, 
-          paddingTop: 6, 
-          paddingBottom: 6, 
-          borderRadius: 0,
+        hover: {
+          paddingLeft: 10,
+          paddingRight: 16,
+          paddingTop: 6,
+          paddingBottom: 6,
+          borderRadius: 8,
         },
       }}
       transition={tweenTransition}
@@ -82,9 +82,9 @@ function LinkArrowButton({ children }: { children: React.ReactNode }) {
       >
         <motion.div
           className="flex items-center justify-center flex-shrink-0"
-          style={{ width: 16, height: 16 }}
+          style={{ width: 18, height: 18 }}
           variants={{
-            rest: { x: 24, rotate: 45 },
+            rest: { x: 24, rotate: 35 },
             hover: { x: 0, rotate: 45 },
           }}
           transition={tweenTransition}
@@ -107,10 +107,10 @@ function LinkArrowButton({ children }: { children: React.ReactNode }) {
       >
         <motion.div
           className="flex items-center justify-center flex-shrink-0"
-          style={{ width: 16, height: 16 }}
+          style={{ width: 18, height: 18, scale: 1.1 }}
           variants={{
             rest: { x: 0, rotate: 0 },
-            hover: { x: -24, rotate: 45 },
+            hover: { x: -24, rotate: 15 },
           }}
           transition={tweenTransition}
         >
@@ -165,8 +165,8 @@ export function TitleAnimationSection() {
             className="text-[54px] font-bold font-nohemi leading-[1.1] text-left min-h-[140px]"
           >
             {lines.map((line, lineIndex) => (
-              <motion.span 
-                key={`line-${lineIndex}`} 
+              <motion.span
+                key={`line-${lineIndex}`}
                 className="block"
                 animate={isButtonHovered ? { y: -10 } : { y: 0 }}
                 transition={{
@@ -244,9 +244,9 @@ export function TitleAnimationSection() {
           </motion.div>
         </div>
 
-        
 
-        
+
+
       </div>
 
       <div className="absolute top-0 left-0 z-10 p-4">
