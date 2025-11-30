@@ -33,18 +33,18 @@ export function HeroAnimationB({
               transition={{
                 delay: 0.03 * index,
                 type: "spring",
-                bounce: 0,
-                duration: 0.8,
+                stiffness: 50,
+                damping: 20,
                 filter: {
                   type: "spring",
-                  bounce: 0,
-                  duration: 0.7,
+                  stiffness: 60,
+                  damping: 20,
                   delay: 0.03 * index,
                 },
                 fontWeight: {
                   type: "spring",
-                  bounce: 0,
-                  duration: 1,
+                  stiffness: 50,
+                  damping: 30,
                   delay: 0.05 * index,
                 },
               }}
@@ -68,8 +68,8 @@ export function HeroAnimationB({
             transition={{
               filter: {
                 type: "spring",
-                bounce: 0,
-                duration: 1,
+                stiffness: 30,
+                damping: 10,
                 delay: 1 + index * 0.05,
               },
               opacity: {
