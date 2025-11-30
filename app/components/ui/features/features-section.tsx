@@ -43,6 +43,7 @@ export function FeaturesSection() {
     const isScrollingToTarget = useRef(false);
     const targetIndex = useRef<number | null>(null);
     const rafId = useRef<number | null>(null);
+    const [borderRadius, setBorderRadius] = useState(16);
 
     // 使用 RAF 实时更新进度条（直接操作 DOM，避免 React 重渲染）
     const updateProgressRAF = useCallback(() => {
@@ -128,6 +129,22 @@ export function FeaturesSection() {
         return () => observer.disconnect();
     }, []);
 
+    // 监听 section 宽度变化，动态计算圆角
+    useEffect(() => {
+        const firstSection = sectionRefs.current[0];
+        if (!firstSection) return;
+
+        const resizeObserver = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                const width = entry.contentRect.width;
+                setBorderRadius(width * 0.024);
+            }
+        });
+
+        resizeObserver.observe(firstSection);
+        return () => resizeObserver.disconnect();
+    }, []);
+
     const scrollToSection = (index: number) => {
         isScrollingToTarget.current = true;
         targetIndex.current = index;
@@ -137,7 +154,7 @@ export function FeaturesSection() {
 
     return (
         <section ref={containerRef} className="w-full py-25 bg-[#ffffff] overflow-clip">
-            <div className="max-w-7xl mx-auto px-15">
+            <div className="max-w-[1600px] mx-auto px-15">
 
                 <div className="flex gap-[60px]">
                     {/* 左侧 Sticky 导航 */}
@@ -184,7 +201,8 @@ export function FeaturesSection() {
                                 key={section.id}
                                 ref={(el) => { sectionRefs.current[index] = el; }}
                                 id={section.id}
-                                className="w-full aspect-[3/2] rounded-[16px] bg-[#f4f4f5] overflow-hidden"
+                                className="w-full aspect-[3/2] bg-[#f4f4f5] overflow-hidden"
+                                style={{ borderRadius: `${borderRadius}px` }}
                             >
                                 <section.Component scrollProgress={progressValues[index]} />
                             </div>
