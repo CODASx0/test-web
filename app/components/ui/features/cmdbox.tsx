@@ -1,7 +1,5 @@
 'use client';
 
-import { cn } from '@/lib/utils';
-
 // 添加图标
 function PlusIcon({ className }: { className?: string }) {
     return (
@@ -83,12 +81,7 @@ function IconButton({
     return (
         <button
             onClick={onClick}
-            className={cn(
-                'flex items-center justify-center size-[32px] rounded-[10px] cursor-pointer transition-colors duration-200 ease',
-                variant === 'default' && 'text-zinc-500 hover:text-zinc-700 hover:bg-black/5',
-                variant === 'primary' && 'bg-[#202030] border border-[#09090b] text-white rounded-full shadow-[inset_0px_2px_1px_0px_rgba(255,255,255,0.1),inset_0px_4px_10px_0px_rgba(255,255,255,0.2)] hover:bg-[#2a2a40]',
-                className
-            )}
+            className={`flex items-center justify-center size-[32px] rounded-[10px] cursor-pointer transition-colors duration-200 ease ${variant === 'default' ? 'text-zinc-500 hover:text-zinc-700 hover:bg-black/5' : ''} ${variant === 'primary' ? 'bg-[#202030] border border-[#09090b] text-white rounded-full shadow-[inset_0px_2px_1px_0px_rgba(255,255,255,0.1),inset_0px_4px_10px_0px_rgba(255,255,255,0.2)] hover:bg-[#2a2a40]' : ''} ${className ?? ''}`}
         >
             {children}
         </button>
@@ -108,10 +101,7 @@ export function CmdBox({
 }: CmdBoxProps) {
     return (
         <div
-            className={cn(
-                'backdrop-blur-[5px] bg-white rounded-2xl flex flex-col h-full',
-                className
-            )}
+            className={`backdrop-blur-[5px] bg-white rounded-2xl flex flex-col h-full ${className ?? ''}`}
         >
             {/* 输入区域 */}
             <div className="px-[14px] py-3 h-full">

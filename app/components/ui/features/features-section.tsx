@@ -5,7 +5,6 @@ import { FeatureSection1 } from './feature-section-1';
 import { FeatureSection2 } from './feature-section-2';
 import { FeatureSection3 } from './feature-section-3';
 import { FeatureSection4 } from './feature-section-4';
-import { cn } from '@/lib/utils';
 
 const sections = [
     { id: 'section-1', label: 'Section 1', Component: FeatureSection1 },
@@ -163,14 +162,7 @@ export function FeaturesSection() {
                             <div key={section.id} className="flex flex-col">
                                 <button
                                     onClick={() => scrollToSection(index)}
-                                    className={cn(
-                                        "text-left text-sm transition-colors duration-200 ease",
-                                        "py-1 px-0 rounded-lg border-transparent",
-                                        "hover:text-neutral-900 hover:border-neutral-300",
-                                        index === activeIndex
-                                            ? "text-neutral-900"
-                                            : "text-neutral-500"
-                                    )}
+                                    className={`text-left text-sm transition-colors duration-200 ease py-1 px-0 rounded-lg border-transparent hover:text-neutral-900 hover:border-neutral-300 ${index === activeIndex ? "text-neutral-900" : "text-neutral-500"}`}
                                 >
                                     {section.label}
                                 </button>

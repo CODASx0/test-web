@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { motion } from "framer-motion"
 
-import { cn } from "@/lib/utils"
-
 interface TypewriterProps {
   text: string
   charDelay?: number
@@ -127,7 +125,7 @@ const Typewriter = ({
   const renderedChars = displayed.split("")
 
   return (
-    <span className={cn("inline-block min-h-[1em] whitespace-pre-line tracking-tight", className)}>
+    <span className={`inline-block min-h-[1em] whitespace-pre-line tracking-tight ${className ?? ''}`}>
       {renderedChars.length === 0
         ? "\u00A0"
         : renderedChars.map((char, idx) => {
@@ -156,7 +154,7 @@ const Typewriter = ({
       {showCursor && cursorVisible && (
         <span
           aria-hidden="true"
-          className={cn("inline-block align-baseline", cursorClassName)}
+          className={`inline-block align-baseline ${cursorClassName ?? ''}`}
           style={{ opacity: blinkOn ? 1 : 0 }}
         >
           {cursorChar}
