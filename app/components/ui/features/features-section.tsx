@@ -139,7 +139,6 @@ export function FeaturesSection() {
                 setBorderRadius(width * 0.024);
             }
         });
-
         resizeObserver.observe(firstSection);
         return () => resizeObserver.disconnect();
     }, []);
@@ -155,9 +154,9 @@ export function FeaturesSection() {
         <section ref={containerRef} className="w-full py-25 bg-[#ffffff] overflow-clip">
             <div className="max-w-[1600px] mx-auto px-15">
 
-                <div className="flex gap-[60px]">
+                <div className="flex gap-6 lg:gap-10 xl:gap-[60px]">
                     {/* 左侧 Sticky 导航 */}
-                    <nav className="w-[320px] hidden md:flex flex-col gap-3 shrink-0 sticky top-20 h-fit">
+                    <nav className="w-[200px] lg:w-[260px] xl:w-[320px] hidden md:flex flex-col gap-3 shrink-0 sticky top-20 h-fit">
                         {sections.map((section, index) => (
                             <div key={section.id} className="flex flex-col">
                                 <button
@@ -187,7 +186,7 @@ export function FeaturesSection() {
                     </nav>
 
                     {/* 右侧内容区域 */}
-                    <div className="flex-1 space-y-[24px]">
+                    <div className="flex-1 min-w-0 space-y-[24px]">
                         {sections.map((section, index) => (
                             <div
                                 key={section.id}
