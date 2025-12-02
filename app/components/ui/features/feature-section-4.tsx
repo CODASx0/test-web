@@ -2,15 +2,10 @@
 
 import Image from 'next/image';
 import { CmdBox } from '@/app/components/ui/features/cmdbox';
+import { motion } from 'framer-motion';
 
 interface FeatureSection4Props {
     scrollProgress: number;
-}
-
-// 映射函数：将 value 从 [inMin, inMax] 映射到 [outMin, outMax]，并 clamp 到输出范围
-function mapRange(value: number, inMin: number, inMax: number, outMin: number, outMax: number): number {
-    const t = Math.max(0, Math.min(1, (value - inMin) / (inMax - inMin)));
-    return outMin + t * (outMax - outMin);
 }
 
 const cards = [
@@ -20,12 +15,22 @@ const cards = [
     { id: 4, type: 'cmdbox' },
 ] as const;
 
+// 弹簧配置 - 不要太弹
+const springTransition = {
+    type: 'spring' as const,
+    stiffness: 100,
+    damping: 20,
+    mass: 1,
+};
+
 export function FeatureSection4({ scrollProgress }: FeatureSection4Props) {
-    //progress1: 0 - 0.45 -> 0 - 1 用映射函数
-    const progress1 = mapRange(scrollProgress, 0.2, 0.49, 0, 1);
-    const progress2 = mapRange(scrollProgress, 0.49, 1, 0, 1);
+    // 触发点：当滚动到 0.2 时触发动画
+    const triggerPoint = 0.2;
+    const isTriggered = scrollProgress >= triggerPoint;
+
     const height = 200;
-    const width = height * 3 / 2+700*(1-progress1)
+    // 触发前: 宽度 = 1000, 触发后: 宽度 = 300
+    const targetWidth = isTriggered ? height * 3 / 2 : height * 3 / 2 + 700;
 
     return (
         <div
@@ -36,10 +41,13 @@ export function FeatureSection4({ scrollProgress }: FeatureSection4Props) {
             }}
         >
             {/* 卡片容器 - 3:2 比例 */}
-            <div
+            <motion.div
                 className="relative aspect-[3/2]"
+                animate={{
+                    width: targetWidth,
+                }}
+                transition={springTransition}
                 style={{
-                    width: `${width}px`,
                     height: `${height}px`,
                     transformStyle: 'preserve-3d',
                 }}
@@ -47,20 +55,24 @@ export function FeatureSection4({ scrollProgress }: FeatureSection4Props) {
                 {cards.map((card, index) => {
                     // 每张卡片的目标角度: 0°, 30°, 60°, 90°
                     const targetAngle = index * 30;
-                    // 根据滚动进度计算当前角度
-                    const currentAngle = 60 *(1 - progress1)+targetAngle*(1-progress1);
+                    // 触发前: 所有卡片都有额外的 60° + targetAngle 偏移
+                    // 触发后: 卡片到达目标角度 0
+                    const currentAngle = isTriggered ? 0 : -(60 + targetAngle);
 
                     // z-index: 后面的卡片在下面
                     const zIndex = cards.length + index;
 
                     return (
-                        <div
+                        <motion.div
                             key={card.id}
                             className="absolute inset-0 rounded-2xl overflow-hidden bg-white"
+                            animate={{
+                                rotateX: currentAngle,
+                            }}
+                            transition={springTransition}
                             style={{
                                 transformStyle: 'preserve-3d',
                                 transformOrigin: 'center calc(100% + 100%)',
-                                transform: `rotateX(${-currentAngle}deg)`,
                                 zIndex,
                                 backfaceVisibility: 'hidden',
                                 willChange: 'transform',
@@ -76,10 +88,10 @@ export function FeatureSection4({ scrollProgress }: FeatureSection4Props) {
                             ) : (
                                 <CmdBox className="w-full" />
                             )}
-                        </div>
+                        </motion.div>
                     );
                 })}
-            </div>
+            </motion.div>
         </div>
     );
 }
