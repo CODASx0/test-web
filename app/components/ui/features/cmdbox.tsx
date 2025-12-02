@@ -96,7 +96,7 @@ interface CmdBoxProps {
 
 export function CmdBox({
     className,
-    placeholder = 'Ask me anything...',
+    placeholder = 'Ask me anything...Ask me anything...Ask me anything...Ask me anything...Ask me anything...Ask me anything...Ask me anything...Ask me anything...Ask me anything...',
     onSubmit,
 }: CmdBoxProps) {
     return (
@@ -104,14 +104,14 @@ export function CmdBox({
             className={`backdrop-blur-[5px] bg-white rounded-2xl flex flex-col h-full ${className ?? ''}`}
         >
             {/* 输入区域 */}
-            <div className="px-[14px] py-3 h-full">
-                <input
-                    type="text"
+            <div className="px-[14px] py-3 flex-1">
+                <textarea
                     placeholder={placeholder}
-                    className="w-full bg-transparent font-manrope font-medium text-sm leading-5 tracking-[0.2px] text-zinc-700 placeholder:text-zinc-700/20 outline-none"
+                    className="w-full h-full bg-transparent font-manrope font-medium text-sm leading-5 tracking-[0.2px] text-zinc-700 placeholder:text-zinc-700/20 outline-none resize-none"
                     onKeyDown={(e) => {
-                        if (e.key === 'Enter' && onSubmit) {
-                            onSubmit((e.target as HTMLInputElement).value);
+                        if (e.key === 'Enter' && !e.shiftKey && onSubmit) {
+                            e.preventDefault();
+                            onSubmit((e.target as HTMLTextAreaElement).value);
                         }
                     }}
                 />
