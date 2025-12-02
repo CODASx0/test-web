@@ -24,8 +24,8 @@ const springTransition = {
 };
 
 export function FeatureSection4({ scrollProgress }: FeatureSection4Props) {
-    // 触发点：当滚动到 0.2 时触发动画
-    const triggerPoint = 0.2;
+    // 触发点：当滚动到 0.45 时触发动画
+    const triggerPoint = 0.40;
     const isTriggered = scrollProgress >= triggerPoint;
 
     const height = 200;

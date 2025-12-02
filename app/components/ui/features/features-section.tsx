@@ -186,7 +186,7 @@ export function FeaturesSection() {
                     </nav>
 
                     {/* 右侧内容区域 */}
-                    <div className="flex-1 min-w-0 space-y-[24px]">
+                    <div className="flex-1 min-w-0 space-y-[64px]">
                         {sections.map((section, index) => (
                             <div
                                 key={section.id}
