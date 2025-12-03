@@ -96,6 +96,8 @@ const springTransition = {
     stiffness: 100,
     damping: 20,
     mass: 1,
+    restDelta: 0.0001,   // 更小的阈值，避免提前 snap
+    restSpeed: 0.0001,   // 更小的速度阈值
 };
 
 // 总卡片数（图片卡片 + CmdBox）
