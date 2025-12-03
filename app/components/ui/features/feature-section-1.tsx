@@ -10,8 +10,8 @@ interface FeatureSection1Props {
 // ===== 全局缩放配置（triggerPoint 触发方式）=====
 const globalScale = {
     triggerPoint: 0.5,   // 触发缩放的 scrollProgress 值
-    scaleFrom: 1.2,      // 动画前缩放值
-    scaleTo: 1,          // 动画后缩放值
+    scaleFrom: 1.4,      // 动画前缩放值
+    scaleTo: 1.4,          // 动画后缩放值
 };
 
 // 全局缩放专用的 spring 配置（更平滑的结束）
@@ -83,7 +83,7 @@ const layers: Layer[] = [
         from: {
             topLeft: { x: 1051/1500, y: 16/1000 },
             bottomRight: { x: 1458/1500, y: 984/1000 },
-            blur: 300/1500,  // 动画前的 blur（相对于容器宽度）
+            blur: 100/1500,  // 动画前的 blur（相对于容器宽度）
             opacity: 0,
         },
         to: {
@@ -306,7 +306,13 @@ export function FeatureSection1({ scrollProgress }: FeatureSection1Props) {
     let currentZIndex = 0;
 
     return (
-        <div className="w-full h-full relative overflow-visible">
+        <div 
+            className="w-full h-full relative overflow-hidden"
+            style={{ 
+                // 使用 clip-path 强制裁剪，确保 blur 不会溢出圆角
+                clipPath: 'inset(0 round var(--section-border-radius, 0px))',
+            }}
+        >
             {/* 全局缩放容器 - 以右上角为锚点，triggerPoint 触发 */}
             <motion.div
                 className="absolute inset-0 will-change-transform"

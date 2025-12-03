@@ -84,7 +84,7 @@ export function HeroSection() {
           <motion.div
             key={`hero-panel-layer-${animationMode}-${key}`}
             initial={{
-              filter: "blur(100px)",
+              filter: "blur(0px)",
               opacity: 0,
               width: "556px",
               

@@ -193,7 +193,11 @@ export function FeaturesSection() {
                                 ref={(el) => { sectionRefs.current[index] = el; }}
                                 id={section.id}
                                 className="w-full aspect-[3/2] bg-[#f4f4f5] overflow-hidden"
-                                style={{ borderRadius: `${borderRadius}px` }}
+                                style={{ 
+                                    borderRadius: `${borderRadius}px`,
+                                    // 使用 CSS 变量传递圆角值给子组件
+                                    '--section-border-radius': `${borderRadius}px`,
+                                } as React.CSSProperties}
                             >
                                 <section.Component scrollProgress={progressValues[index]} />
                             </div>

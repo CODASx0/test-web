@@ -11,7 +11,7 @@ function PlusIcon({ className }: { className?: string }) {
             className={className}
             width={32}
             height={32}
-        />
+            />
     );
 }
 
@@ -24,7 +24,7 @@ function TuneIcon({ className }: { className?: string }) {
             className={className}
             width={32}
             height={32}
-        />
+            />
     );
 }
 
@@ -174,15 +174,15 @@ export function CmdBox({
                     </div>
                 ) : (
                     <textarea
-                        placeholder={placeholder}
+                    placeholder={placeholder}
                         className="w-full h-full bg-transparent font-manrope font-medium text-sm leading-5 tracking-[0.2px] text-zinc-700 placeholder:text-zinc-700/20 outline-none resize-none"
-                        onKeyDown={(e) => {
+                    onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey && onSubmit) {
                                 e.preventDefault();
                                 onSubmit((e.target as HTMLTextAreaElement).value);
-                            }
-                        }}
-                    />
+                        }
+                    }}
+                />
                 )}
             </div>
 

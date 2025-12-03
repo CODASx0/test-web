@@ -5,15 +5,15 @@ import Image from 'next/image';
 import { CmdBox } from './cmdbox';
 import { useRef, useState, useEffect } from 'react';
 
-interface FeatureSection1Props {
+interface FeatureSection2Props {
     scrollProgress: number;
 }
 
 // ===== 全局缩放配置（triggerPoint 触发方式）=====
 const globalScale = {
     triggerPoint: 0.51,   // 触发缩放的 scrollProgress 值
-    scaleFrom: 1,      // 动画前缩放值
-    scaleTo: 1.5,          // 动画后缩放值
+    scaleFrom: 1.4,      // 动画前缩放值
+    scaleTo: 1.4,          // 动画后缩放值
 };
 
 // 全局缩放专用的 spring 配置（更平滑的结束）
@@ -68,7 +68,7 @@ type Layer = SingleLayer | MessageGroupLayer;
 // ===== 图层配置 =====
 const layers: Layer[] = [
     // 背景层（最底层）
-    { id: 'bg-1', src: '/feature-section-2/F 2 - bg 1.webp', triggerPoint: 0.4, offsetY: 0 ,
+    { id: 'bg-1', src: '/feature-section-2/F 2 - bg 1.png', triggerPoint: 0.4, offsetY: 0 ,
         from: {
             opacity: 0,
         },
@@ -85,13 +85,13 @@ const layers: Layer[] = [
         from: {
             topLeft: { x: 1064/1500, y: 902/1000 },
             bottomRight: { x: (1064+407)/1500, y: (902+62)/1000 },
-            blur: 300/1500,  // 动画前的 blur（相对于容器宽度）
+            //blur: 300/1500,  // 动画前的 blur（相对于容器宽度）
             opacity: 0,
         },
         to: {
             topLeft: { x: 1064/1500, y: 902/1000 },
             bottomRight: { x: (1064+407)/1500, y: (902+62)/1000 },
-            blur: 36/1500,  // 动画后的 blur（相对于容器宽度）
+            blur: 24/1500,  // 动画后的 blur（相对于容器宽度）
             opacity: 0.8,
         },
     },
@@ -99,19 +99,18 @@ const layers: Layer[] = [
     
     
     // 时间线
-    { id: 'timeline', src: '/feature-section-2/F 2 - timeline.webp', triggerPoint: 0.45, offsetY: 0 },
+    { id: 'timeline', src: '/feature-section-2/F 2 - timeline.webp', triggerPoint: 0.40, offsetY: 40 },
     
     // BGM
-    { id: 'bgm', src: '/feature-section-2/F 2 - BGM.webp', triggerPoint: 0.45, offsetY: 0 },
+    { id: 'bgm', src: '/feature-section-2/F 2 - BGM.webp', triggerPoint: 0.49, offsetY: 6 },
 ];
 
 // CmdBox 配置（基于 1500x1000 设计稿）
 const cmdBoxConfig = {
-    triggerPoint: 0.35,
-    
     left: 1047+16,
-    bottom: 28,
+    bottom: 28,                  // 目标 bottom（设计稿坐标）
     right: 28,
+    stickyBottomPx: 80,          // sticky 时距离窗口底部的像素
     // 设计稿尺寸
     designWidth: 1500,
     designHeight: 1000,
@@ -171,9 +170,12 @@ function AnimatedLayer({ src, triggerPoint, offsetY, scrollProgress, zIndex, fro
     // 是否有自定义锚点（非默认全屏）
     const hasCustomAnchors = from?.topLeft || from?.bottomRight || to?.topLeft || to?.bottomRight;
 
+    // 是否有 blur 动画
+    const hasBlurAnimation = (from?.blur ?? 0) > 0 || (to?.blur ?? 0) > 0;
+    
     return (
         <motion.div
-            className="absolute will-change-transform"
+            className="absolute"
             initial={{ 
                 y: offsetY, 
                 opacity: 0,
@@ -193,6 +195,8 @@ function AnimatedLayer({ src, triggerPoint, offsetY, scrollProgress, zIndex, fro
                 zIndex,
                 // 如果没有自定义锚点，使用 inset-0
                 ...(hasCustomAnchors ? {} : { inset: 0 }),
+                // 优化：只在有 blur 动画时启用 will-change filter
+                willChange: hasBlurAnimation ? 'transform, filter' : 'transform',
             }}
         >
             {isVideo ? (
@@ -294,13 +298,14 @@ function isMessageGroup(layer: Layer): layer is MessageGroupLayer {
     return layer.type === 'messageGroup';
 }
 
-export function FeatureSection2({ scrollProgress }: FeatureSection1Props) {
+export function FeatureSection2({ scrollProgress }: FeatureSection2Props) {
     // 全局缩放触发判断
     const isScaleTriggered = scrollProgress >= globalScale.triggerPoint;
     
     // 容器 ref 和缩放比例
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerScale, setContainerScale] = useState(1);
+    const [containerRect, setContainerRect] = useState({ top: 0, height: 0 });
     
     // 监听容器尺寸变化，计算缩放比例
     useEffect(() => {
@@ -309,8 +314,10 @@ export function FeatureSection2({ scrollProgress }: FeatureSection1Props) {
         
         const updateScale = () => {
             const width = container.offsetWidth;
+            const rect = container.getBoundingClientRect();
             // 根据容器实际宽度计算缩放比例（设计稿宽度 1500）
             setContainerScale(width / cmdBoxConfig.designWidth);
+            setContainerRect({ top: rect.top, height: rect.height });
         };
         
         updateScale();
@@ -318,14 +325,52 @@ export function FeatureSection2({ scrollProgress }: FeatureSection1Props) {
         const resizeObserver = new ResizeObserver(updateScale);
         resizeObserver.observe(container);
         
-        return () => resizeObserver.disconnect();
+        // 滚动时也更新位置
+        window.addEventListener('scroll', updateScale, { passive: true });
+        
+        return () => {
+            resizeObserver.disconnect();
+            window.removeEventListener('scroll', updateScale);
+        };
     }, []);
+    
+    // 计算 CmdBox 的 bottom 值（设计稿坐标）
+    // 实现 sticky 效果：CmdBox 固定在窗口底部 80px，直到到达目标位置
+    const calculateCmdBoxBottom = () => {
+        const { bottom: targetBottom, stickyBottomPx } = cmdBoxConfig;
+        
+        if (typeof window === 'undefined' || containerRect.height === 0) {
+            return targetBottom;
+        }
+        
+        const viewportHeight = window.innerHeight;
+        const containerBottom = containerRect.top + containerRect.height;
+        
+        // 计算 sticky 位置：CmdBox 应该在视口底部 stickyBottomPx 的位置
+        // 转换为相对于容器底部的距离（设计稿坐标）
+        const stickyPosFromContainerBottom = containerBottom - (viewportHeight - stickyBottomPx);
+        const stickyBottomInDesign = stickyPosFromContainerBottom / containerScale;
+        
+        // 取 sticky 位置和目标位置的最大值
+        // 当 sticky 位置大于目标位置时，CmdBox 在 sticky 位置（固定在窗口底部）
+        // 当 sticky 位置小于等于目标位置时，CmdBox 在目标位置
+        return Math.max(stickyBottomInDesign, targetBottom);
+    };
+    
+    const cmdBoxBottom = calculateCmdBoxBottom();
     
     // 计算每个图层的 zIndex（messageGroup 会占用多个 zIndex）
     let currentZIndex = 0;
 
     return (
-        <div ref={containerRef} className="w-full h-full relative overflow-visible">
+        <div 
+            ref={containerRef} 
+            className="w-full h-full relative overflow-hidden"
+            style={{ 
+                // 使用 clip-path 强制裁剪，确保 blur 不会溢出圆角
+                clipPath: 'inset(0 round var(--section-border-radius, 0px))',
+            }}
+        >
             {/* 全局缩放容器 - 以右上角为锚点，triggerPoint 触发 */}
             <motion.div
                 className="absolute inset-0 will-change-transform"
@@ -380,23 +425,17 @@ export function FeatureSection2({ scrollProgress }: FeatureSection1Props) {
                             transform: `scale(${containerScale})`,
                         }}
                     >
-                        <motion.div
-                            className="absolute will-change-transform"
-                            initial={{ y: 30, opacity: 0 }}
-                            animate={{
-                                y: scrollProgress >= cmdBoxConfig.triggerPoint ? 0 : 30,
-                                opacity: scrollProgress >= cmdBoxConfig.triggerPoint ? 1 : 0,
-                            }}
-                            transition={springTransition}
+                        <div
+                            className="absolute"
                             style={{
                                 // 使用设计稿的像素坐标
                                 left: cmdBoxConfig.left,
                                 right: cmdBoxConfig.right,
-                                bottom: cmdBoxConfig.bottom,
+                                bottom: cmdBoxBottom,
                             }}
                         >
                             <CmdBox className="h-auto" messages={['Make the protagonist run faster!', 'Make the music more intense!']} />
-                        </motion.div>
+                        </div>
                     </div>
                 </div>
             </motion.div>
