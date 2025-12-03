@@ -152,7 +152,7 @@ export function TitleAnimationSection() {
 
   const lines = [
     ["Chat", "it."],
-    ["Create", "it."],
+    ["Create", "it","in","seconds."],
   ]
   let wordCounter = 0
 
@@ -194,10 +194,9 @@ export function TitleAnimationSection() {
                           filter: "blur(0px)",
                           transition: {
                             type: "spring",
-                            stiffness: 100,
-                            damping: 30,
-                            mass: 2,
-                            delay: delayIndex * 0.12,
+                            duration: 0.9,
+                            bounce: 0,
+                            delay: delayIndex * 0.08,
                           },
                         },
                       }}

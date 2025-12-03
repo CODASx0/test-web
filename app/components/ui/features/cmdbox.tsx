@@ -76,8 +76,9 @@ interface CmdBoxProps {
     className?: string;
     placeholder?: string;
     messages?: string[];
-    typingSpeed?: number;
-    pauseDuration?: number;
+    typingSpeed?: number;      // 打字速度（毫秒/字符）
+    deletingSpeed?: number;    // 删字速度（毫秒/字符）
+    pauseDuration?: number;    // 打完后暂停时长（毫秒）
     onSubmit?: (value: string) => void;
 }
 
@@ -86,6 +87,7 @@ export function CmdBox({
     placeholder = 'Ask me anything...',
     messages,
     typingSpeed = 50,
+    deletingSpeed = 25,
     pauseDuration = 2000,
     onSubmit,
 }: CmdBoxProps) {
@@ -121,19 +123,19 @@ export function CmdBox({
             }
         } else if (state.phase === 'pausing') {
             state.phase = 'deleting';
-            timerRef.current = setTimeout(tick, typingSpeed / 2);
+            timerRef.current = setTimeout(tick, deletingSpeed);
         } else if (state.phase === 'deleting') {
             if (state.charIndex > 0) {
                 state.charIndex--;
                 setDisplayText(currentMessage.slice(0, state.charIndex));
-                timerRef.current = setTimeout(tick, typingSpeed / 2);
+                timerRef.current = setTimeout(tick, deletingSpeed);
             } else {
                 state.messageIndex = (state.messageIndex + 1) % msgs.length;
                 state.phase = 'typing';
                 timerRef.current = setTimeout(tick, typingSpeed);
             }
         }
-    }, [typingSpeed, pauseDuration]);
+    }, [typingSpeed, deletingSpeed, pauseDuration]);
 
     // 启动打字机效果
     useEffect(() => {
