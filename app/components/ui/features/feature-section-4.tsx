@@ -117,34 +117,34 @@ const stackPhase = {
 export function FeatureSection4({ scrollProgress }: FeatureSection4Props) {
     // 全局缩放触发判断
     const isScaleTriggered = scrollProgress >= globalScale.triggerPoint;
-    
+
     // 第一阶段：卡片展开动画触发点
     const triggerPoint = 0.3;
     const isTriggered = scrollProgress >= triggerPoint;
-    
+
     // 第二阶段：堆叠动画触发点
     const isStackTriggered = scrollProgress >= stackPhase.triggerPoint;
 
     // 容器 ref 和缩放比例
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerScale, setContainerScale] = useState(1);
-    
+
     // 监听容器尺寸变化，计算缩放比例
     useEffect(() => {
         const container = containerRef.current;
         if (!container) return;
-        
+
         const updateScale = () => {
             const width = container.offsetWidth;
             // 根据容器实际宽度计算缩放比例（设计稿宽度 1500）
             setContainerScale(width / designConfig.designWidth);
         };
-        
+
         updateScale();
-        
+
         const resizeObserver = new ResizeObserver(updateScale);
         resizeObserver.observe(container);
-        
+
         return () => {
             resizeObserver.disconnect();
         };
@@ -152,7 +152,7 @@ export function FeatureSection4({ scrollProgress }: FeatureSection4Props) {
 
     // 计算最终的卡片缩放值 = 容器缩放 × 全局缩放
     const targetGlobalScale = isScaleTriggered ? globalScale.scaleTo : globalScale.scaleFrom;
-    
+
     // 使用 spring 动画 zoom 值，保持文字清晰
     const zoomSpring = useSpring(containerScale * globalScale.scaleFrom, {
         stiffness: globalScaleTransition.stiffness,
@@ -161,7 +161,7 @@ export function FeatureSection4({ scrollProgress }: FeatureSection4Props) {
         restDelta: globalScaleTransition.restDelta,
         restSpeed: globalScaleTransition.restSpeed,
     });
-    
+
     // 当目标值变化时更新 spring
     useEffect(() => {
         zoomSpring.set(containerScale * targetGlobalScale);
@@ -198,30 +198,30 @@ export function FeatureSection4({ scrollProgress }: FeatureSection4Props) {
                     // 图片卡片 z-index：后入场的在上面（index 大的 z-index 大）
                     // 始终低于 CmdBox（CmdBox z-index = 100）
                     const zIndex = index + 1;
-                    
+
                     // 图片卡片动画状态
                     const imgFrom = imageCardConfig.from;
                     const imgTo = imageCardConfig.to;
-                    
+
                     // 第一阶段延迟
                     const forwardDelay = index * cardDelay;
                     const reverseDelay = (totalCards - 1 - index) * cardDelay;
                     const phase1Delay = isTriggered ? forwardDelay : reverseDelay;
-                    
+
                     // 第二阶段延迟（后入场的先动画，即 index 从大到小）
                     // index=2 先动画（delay=0），index=1 次之，index=0 最后
                     const reverseIndex = imageCards.length - 1 - index;
                     const stackForwardDelay = reverseIndex * stackPhase.delay;
                     const stackReverseDelay = index * stackPhase.delay;
                     const phase2Delay = isStackTriggered ? stackForwardDelay : stackReverseDelay;
-                    
+
                     // 综合延迟
                     const delay = isStackTriggered ? phase2Delay : phase1Delay;
-                    
+
                     // 容器基准尺寸
                     const containerWidth = imageCardConfig.to.width;
                     const containerHeight = imageCardConfig.to.height;
-                    
+
                     // 第二阶段：堆叠效果计算
                     // 先入场的图片（index 小）在最后面，缩放更小，位移更多
                     // 后入场的图片（index 大）在最前面，缩放更大，位移更少
@@ -230,11 +230,11 @@ export function FeatureSection4({ scrollProgress }: FeatureSection4Props) {
                     // index=2 (图片3): 最前面, scale=0.95, offsetY=-15px
                     const stackScale = stackPhase.baseScale + index * stackPhase.scaleStep;
                     const stackOffsetY = (reverseIndex + 1) * stackPhase.offsetY;
-                    
+
                     // 第一阶段目标宽高
                     const phase1Width = isTriggered ? imgTo.width : imgFrom.width;
                     const phase1Height = isTriggered ? imgTo.height : imgFrom.height;
-                    
+
                     // 最终目标值
                     const finalWidth = phase1Width;
                     const finalHeight = phase1Height;
@@ -265,7 +265,7 @@ export function FeatureSection4({ scrollProgress }: FeatureSection4Props) {
                                 scale: finalScale,
                                 rotateX: currentAngle,
                                 opacity: finalOpacity,
-                                filter: isTriggered 
+                                filter: isTriggered
                                     ? (imgTo.blur ? `blur(${imgTo.blur}px)` : 'none')
                                     : (imgFrom.blur ? `blur(${imgFrom.blur}px)` : 'none'),
                             }}
@@ -290,12 +290,12 @@ export function FeatureSection4({ scrollProgress }: FeatureSection4Props) {
                         </motion.div>
                     );
                 })}
-                
+
                 {/* Layer 视频层（在 CmdBox 下方，被 CmdBox 遮住）*/}
                 {(() => {
                     const containerWidth = imageCardConfig.to.width;
                     const containerHeight = imageCardConfig.to.height;
-                    
+
                     // 位置：和 CmdBox 相同位置（居中）
                     const layerLeft = (containerWidth - layerConfig.width) / 2;
                     const layerTop = (containerHeight - layerConfig.height) / 2;
@@ -330,7 +330,7 @@ export function FeatureSection4({ scrollProgress }: FeatureSection4Props) {
                         </div>
                     );
                 })()}
-                
+
                 {/* CmdBox 卡片 */}
                 {(() => {
                     const cmdIndex = imageCards.length;
@@ -339,17 +339,17 @@ export function FeatureSection4({ scrollProgress }: FeatureSection4Props) {
                     const currentAngle = isTriggered ? 0 : -(18 + targetAngle);
                     // CmdBox 始终在最顶层
                     const zIndex = 100;
-                    
+
                     // CmdBox 动画状态
                     const cmdFrom = cmdBoxConfig.from;
                     const cmdTo = cmdBoxConfig.to;
-                    
+
                     // 正向延迟：最后一个
                     // 反向延迟：第一个（0）
                     const forwardDelay = cmdIndex * cardDelay;
                     const reverseDelay = (totalCards - 1 - cmdIndex) * cardDelay;
                     const delay = isTriggered ? forwardDelay : reverseDelay;
-                    
+
                     // 容器基准尺寸
                     const containerWidth = imageCardConfig.to.width;
                     const containerHeight = imageCardConfig.to.height;
@@ -368,15 +368,15 @@ export function FeatureSection4({ scrollProgress }: FeatureSection4Props) {
                             animate={{
                                 width: isTriggered ? cmdTo.width : cmdFrom.width,
                                 height: isTriggered ? cmdTo.height : cmdFrom.height,
-                                left: isTriggered 
-                                    ? (containerWidth - cmdTo.width) / 2 
+                                left: isTriggered
+                                    ? (containerWidth - cmdTo.width) / 2
                                     : (containerWidth - cmdFrom.width) / 2,
-                                top: isTriggered 
-                                    ? (containerHeight - cmdTo.height) / 2 
+                                top: isTriggered
+                                    ? (containerHeight - cmdTo.height) / 2
                                     : (containerHeight - cmdFrom.height) / 2,
                                 rotateX: currentAngle,
                                 opacity: isTriggered ? (cmdTo.opacity ?? 1) : (cmdFrom.opacity ?? 0),
-                                filter: isTriggered 
+                                filter: isTriggered
                                     ? (cmdTo.blur ? `blur(${cmdTo.blur}px)` : 'none')
                                     : (cmdFrom.blur ? `blur(${cmdFrom.blur}px)` : 'none'),
                             }}
@@ -394,16 +394,16 @@ export function FeatureSection4({ scrollProgress }: FeatureSection4Props) {
                             }}
                         >
                             <CmdBox className="w-full h-full"
-                             deletingSpeed={7}
-                             typingSpeed={24}
-                             pauseDuration={1600}
-                             messages={[
-                                'Create a documentary-style video explaining what black holes are.',
-                                'Make an animated video in a 90s anime style about a cat who can talk.',
-                                'Create an energetic, 30-second video ad for a new energy drink.',
-                                'Create a sci-fi story video based on The Wandering Earth plot.'
-                                
-                                ]}/>
+                                deletingSpeed={7}
+                                typingSpeed={24}
+                                pauseDuration={1600}
+                                messages={[
+                                    'Create a documentary-style video explaining what black holes are.',
+                                    'Make an animated video in a 90s anime style about a cat who can talk.',
+                                    'Create an energetic, 30-second video ad for a new energy drink.',
+                                    'Create a sci-fi story video based on The Wandering Earth plot.'
+
+                                ]} />
                         </motion.div>
                     );
                 })()}

@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, useSpring } from 'framer-motion';
 import Image from 'next/image';
 import { CmdBox } from './cmdbox';
 import { useRef, useState, useEffect } from 'react';
@@ -122,6 +122,15 @@ const springTransition = {
     stiffness: 300,
     damping: 60,
     mass: 1,
+};
+
+// CmdBox 移动的 spring 配置
+const cmdBoxSpringConfig = {
+    stiffness: 200,
+    damping: 30,
+    mass: 1,
+    restDelta: 0.001,
+    restSpeed: 0.001,
 };
 
 // 判断是否为视频文件
@@ -359,6 +368,14 @@ export function FeatureSection2({ scrollProgress }: FeatureSection2Props) {
     
     const cmdBoxBottom = calculateCmdBoxBottom();
     
+    // 使用 spring 平滑 CmdBox 的移动
+    const cmdBoxBottomSpring = useSpring(cmdBoxBottom, cmdBoxSpringConfig);
+    
+    // 当目标值变化时更新 spring
+    useEffect(() => {
+        cmdBoxBottomSpring.set(cmdBoxBottom);
+    }, [cmdBoxBottom, cmdBoxBottomSpring]);
+    
     // 计算每个图层的 zIndex（messageGroup 会占用多个 zIndex）
     let currentZIndex = 0;
 
@@ -425,17 +442,17 @@ export function FeatureSection2({ scrollProgress }: FeatureSection2Props) {
                             transform: `scale(${containerScale})`,
                         }}
                     >
-                        <div
+                        <motion.div
                             className="absolute"
                             style={{
                                 // 使用设计稿的像素坐标
                                 left: cmdBoxConfig.left,
                                 right: cmdBoxConfig.right,
-                                bottom: cmdBoxBottom,
+                                bottom: cmdBoxBottomSpring,
                             }}
                         >
                             <CmdBox className="h-auto" messages={['Make the protagonist run faster!', 'Make the music more intense!']} />
-                        </div>
+                        </motion.div>
                     </div>
                 </div>
             </motion.div>
