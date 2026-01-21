@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "@fontsource/manrope/400.css";
 import "@fontsource/manrope/500.css";
 import "@fontsource/manrope/600.css";
@@ -29,7 +30,7 @@ export default function RootLayout({
       >
         
         {children}
-        
+        <SpeedInsights />
       </body>
     </html>
   );
