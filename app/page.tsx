@@ -1,22 +1,9 @@
-"use client";
-
-import { HeroSection } from "./components/ui/hero-section";
-import { TitleAnimationSection } from "./components/ui/title-animation-section";
-import { FeaturesSection } from "./components/ui/features/features-section";
-
+import Dialog from "./components/ui/dialog";
 
 export default function Home() {
   return (
-    <main className="w-full">
-
-
-      <HeroSection />
-      <FeaturesSection />
-      <TitleAnimationSection />
-
-
-      {/* Section 3: Canvas 动画（解决可变字体像素跳动问题） */}
-
+    <main className="flex min-h-screen flex-col items-center justify-center bg-[#f8f6f2]">
+      <Dialog />
     </main>
   );
 }

@@ -1,23 +1,9 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Manrope } from "next/font/google";
 import localFont from "next/font/local";
+import "@fontsource/manrope/400.css";
+import "@fontsource/manrope/500.css";
+import "@fontsource/manrope/600.css";
 import "./globals.css";
-
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const manrope = Manrope({
-  variable: "--font-manrope",
-  subsets: ["latin"],
-});
 
 const nohemi = localFont({
   src: "./fonts/Nohemi-VF.ttf",
@@ -38,7 +24,8 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${nohemi.variable} ${manrope.variable} antialiased`}
+        className={`${nohemi.variable} antialiased`}
+        style={{ fontFamily: 'Manrope, system-ui, sans-serif' }}
       >
         
         {children}
