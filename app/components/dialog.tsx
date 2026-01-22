@@ -236,13 +236,22 @@ enum AnimationPhase {
   RESET = 4,             // Phase 5: 重置（input instant 归位）
 }
 
-export default function Dialog() {
+interface DialogProps {
+  onStartNow?: () => void;
+}
+
+export default function Dialog({ onStartNow }: DialogProps) {
   const titleVideoRef = useRef<HTMLVideoElement | null>(null);
   const titleCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const titleTextRef = useRef<HTMLSpanElement | null>(null);
   const titleFadeStart = useRef<number | null>(null);
   const lastFrameTime = useRef<number>(0);
   const prefersReducedMotion = useReducedMotion();
+
+  // 处理 "Start Now" 按钮点击
+  const handleStartNow = useCallback(() => {
+    onStartNow?.();
+  }, [onStartNow]);
 
   // 动画状态
   const [animationKey, setAnimationKey] = useState(0);
@@ -511,7 +520,7 @@ export default function Dialog() {
 
       {/* Content Area */}
       <div
-        className="bg-gradient-to-b from-white to-[#fafafa] border-b border-[#e4e4e7]/50 flex flex-1 gap-2 items-start justify-end overflow-clip px-[18px] py-0 relative w-full z-2"
+        className="bg-linear-to-b from-white to-[#fafafa] border-b border-[#e4e4e7]/50 flex flex-1 gap-2 items-start justify-end overflow-clip px-[18px] py-0 relative w-full z-2"
       >
         {/* Main Container */}
         <div className="bg-[#e4e4e7] flex flex-col gap-[0.5px] h-[360px] items-stretch overflow-clip p-[0.5px] relative shrink-0 w-[677px] rounded-[16px]">
@@ -700,6 +709,7 @@ export default function Dialog() {
         <button
           type="button"
           aria-label="Start Now"
+          onClick={handleStartNow}
           className="bg-[#09090b] border border-[rgba(9,9,11,0.12)]/50 flex flex-col h-10 items-center justify-center overflow-clip relative rounded-xl shrink-0 cursor-pointer transition-opacity duration-200 ease-out [@media(hover:hover)_and_(pointer:fine)]:hover:opacity-90"
         >
           <div className="flex gap-1 items-center justify-center pl-6 pr-4 py-3 relative shrink-0 w-full">
