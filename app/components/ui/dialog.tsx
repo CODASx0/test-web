@@ -243,7 +243,7 @@ export default function Dialog() {
   const titleFadeStart = useRef<number | null>(null);
   const lastFrameTime = useRef<number>(0);
   const prefersReducedMotion = useReducedMotion();
-  
+
   // 动画状态
   const [animationKey, setAnimationKey] = useState(0);
   const [phase, setPhase] = useState<AnimationPhase>(AnimationPhase.INPUT_EXPAND);
@@ -254,20 +254,20 @@ export default function Dialog() {
   const [messageGroupY, setMessageGroupY] = useState(0); // message-group 位置（只在出场时变化）
   const [messageGroupOpacity, setMessageGroupOpacity] = useState(1); // message-group 透明度（只在出场时变化）
   const [showBubbles, setShowBubbles] = useState(false); // 控制 message bubbles 是否开始入场动画
-  
+
   // 计算动画时间
   const inputExpandDuration = inputBubbles.length * ANIMATION_CONFIG.inputBubbleDelay + ANIMATION_CONFIG.inputBubbleDuration;
   // 计算所有 bubble 入场动画的总时长
   const allBubblesCount = message1Bubbles.length + message2Bubbles.length + message3Bubbles.length + message4Bubbles.length + message5Bubbles.length;
   const bubbleEntranceDuration = allBubblesCount * 0.08 + 0.3; // 最后一个 bubble 的延迟 + spring 动画时间
-  
+
   // 动画序列控制
   const runAnimationSequence = useCallback(() => {
     // 重置状态 - 先隐藏 input bubbles（instant，宽度变0）
     setShowInputBubbles(false);
     setInputTransition(false);
     setShowBubbles(false); // 隐藏 message bubbles
-    
+
     // 下一帧再重置位置，确保宽度已经是0
     requestAnimationFrame(() => {
       setPhase(AnimationPhase.INPUT_EXPAND);
@@ -275,51 +275,51 @@ export default function Dialog() {
       setInputY(0);
       setMessageGroupY(0);
       setMessageGroupOpacity(1);
-      
+
       // 再下一帧恢复过渡并显示 input bubbles
       requestAnimationFrame(() => {
         setInputTransition(true);
         setShowInputBubbles(true); // 显示 input bubbles，触发入场动画
       });
     });
-    
+
     // Phase 1: Input bubbles 宽度伸展动画
     // 动画由 InputBubble 组件自动处理
-    
+
     // Phase 2: Generate 按钮弹簧按压 (在 input 动画完成后)
     const phase2Timeout = setTimeout(() => {
       setPhase(AnimationPhase.GENERATE_PRESS);
       setGenerateScale(ANIMATION_CONFIG.generatePressScale);
-      
+
       // 按钮回弹
       setTimeout(() => {
         setGenerateScale(1);
       }, ANIMATION_CONFIG.generatePressDuration * 1000 / 2);
     }, inputExpandDuration * 1000);
-    
+
     // Phase 3a: Generate 点击后立即，Input 向上 100px
     const phase3aTimeout = setTimeout(() => {
       setPhase(AnimationPhase.INPUT_UP_MSG_ENTER);
       setInputY(ANIMATION_CONFIG.inputMoveUpDistance); // input 向上 100px
     }, (inputExpandDuration + ANIMATION_CONFIG.generatePressDuration) * 1000);
-    
+
     // Phase 3b: Generate 点击后 0.3s，Bubbles 从左右入场
     const phase3bTimeout = setTimeout(() => {
       setShowBubbles(true); // 触发 bubbles 从左右两侧逐条入场
     }, (inputExpandDuration + ANIMATION_CONFIG.generatePressDuration + ANIMATION_CONFIG.bubbleStartDelay) * 1000);
-    
+
     // Phase 4: Message-group 出场 (bubbles 入场动画完成后 + 停留时间)
     const phase4Timeout = setTimeout(() => {
       setPhase(AnimationPhase.MESSAGE_EXIT);
       setMessageGroupY(ANIMATION_CONFIG.messageExitDistance); // 向上移动 100px
       setMessageGroupOpacity(0); // 淡出
     }, (inputExpandDuration + ANIMATION_CONFIG.generatePressDuration + ANIMATION_CONFIG.bubbleStartDelay + bubbleEntranceDuration + ANIMATION_CONFIG.messageHoldDuration) * 1000);
-    
+
     // Phase 5: 重置 - 循环 (message-group 出场完成后 + loopDelay)
     const loopTimeout = setTimeout(() => {
       setAnimationKey((prev) => prev + 1);
     }, (inputExpandDuration + ANIMATION_CONFIG.generatePressDuration + ANIMATION_CONFIG.bubbleStartDelay + bubbleEntranceDuration + ANIMATION_CONFIG.messageHoldDuration + ANIMATION_CONFIG.messageExitDuration + ANIMATION_CONFIG.loopDelay) * 1000);
-    
+
     return () => {
       clearTimeout(phase2Timeout);
       clearTimeout(phase3aTimeout);
@@ -328,13 +328,13 @@ export default function Dialog() {
       clearTimeout(loopTimeout);
     };
   }, [inputExpandDuration, bubbleEntranceDuration]);
-  
+
   // 启动动画循环
   useEffect(() => {
     const cleanup = runAnimationSequence();
     return cleanup;
   }, [animationKey, runAnimationSequence]);
-  
+
   // 计算 message bubble 入场的累积延迟
   const BUBBLE_DELAY_STEP = 0.08;
   const messageBubbleCounts = [
@@ -344,7 +344,7 @@ export default function Dialog() {
     message4Bubbles.length, // group 3
     message5Bubbles.length, // group 4
   ];
-  
+
   const getMessageBubbleDelay = (groupIndex: number) => {
     let totalBubbles = 0;
     for (let i = 0; i < groupIndex; i++) {
@@ -384,7 +384,7 @@ export default function Dialog() {
         const rect = text.getBoundingClientRect();
         const w = Math.ceil(rect.width) || 403;
         const h = Math.ceil(rect.height) || 32;
-        
+
         if (canvas.width !== w || canvas.height !== h) {
           canvas.width = w;
           canvas.height = h;
@@ -532,7 +532,7 @@ export default function Dialog() {
           <div className="flex flex-1 flex-col gap-[0.5px] items-stretch overflow-hidden relative  w-full rounded-[15.5px] ">
             {/* Top bar */}
             <div className="bg-white h-6 shrink-0 w-full" />
-            
+
             {/* Main content grid */}
             <div className="flex h-[calc(100%-24px-0.5px)] gap-[0.5px] items-stretch relative w-full">
               {/* Left panel */}
@@ -550,10 +550,10 @@ export default function Dialog() {
               {/* Message container - Right panel */}
               <div className="bg-[#fafafa] flex flex-col h-full items-start overflow-clip p-2.5 relative shrink-0 w-[200px]">
                 {/* Message Group - 只有出场动画（位移+淡出），入场动画由 bubbles 自己控制 */}
-                <motion.div 
+                <motion.div
                   className="flex flex-col gap-2.5 items-start relative shrink-0 w-full"
                   data-name="message-group"
-                  animate={{ 
+                  animate={{
                     y: messageGroupY,
                     opacity: messageGroupOpacity,
                   }}
@@ -638,8 +638,8 @@ export default function Dialog() {
           data-name="cmdbox"
         >
           {/* Input 区域 - 带宽度伸展动画 + 向上移动动画 */}
-          <motion.div 
-            className="flex flex-col gap-2.5 items-start relative shrink-0 w-full" 
+          <motion.div
+            className="flex flex-col gap-2.5 items-start relative shrink-0 w-full"
             data-name="input"
             animate={{ y: inputY }}
             transition={{
@@ -661,7 +661,7 @@ export default function Dialog() {
               />
             ))}
           </motion.div>
-          
+
           {/* Toolbar 区域 - 常驻，无入场动画 */}
           <div className="flex flex-1 items-end justify-between relative w-full" data-name="tool-bar">
             {/* Tool */}
@@ -687,9 +687,9 @@ export default function Dialog() {
       <div className="bg-white flex gap-4 items-center p-4 relative shrink-0 w-full z-1">
         <div
           className="flex flex-1 font-medium gap-3 items-center leading-5 px-4 relative text-[#09090b] text-sm tracking-[0.2px]"
-          style={{ 
+          style={{
             fontFamily: "var(--font-manrope)",
-            fontFeatureSettings: "'zero'" 
+            fontFeatureSettings: "'zero'"
           }}
         >
           <p className="relative shrink-0">Take 2~3 minutes to edit with Medeo.</p>
@@ -705,9 +705,9 @@ export default function Dialog() {
           <div className="flex gap-1 items-center justify-center pl-6 pr-4 py-3 relative shrink-0 w-full">
             <span
               className="flex flex-col font-medium justify-center relative shrink-0 text-white text-sm text-center tracking-[0.1px] leading-5"
-              style={{ 
+              style={{
                 fontFamily: "var(--font-manrope)",
-                fontFeatureSettings: "'zero'" 
+                fontFeatureSettings: "'zero'"
               }}
             >
               Start Now
