@@ -228,7 +228,7 @@ const CMDBOX_BORDER_RADIUS = 32;
 
 // 打字机效果的目标文字
 const TYPEWRITER_TEXT = "Show me some good movie shots in 30s.";
-const TYPEWRITER_SPEED = 30; // 每个字符的间隔时间 (ms)
+const TYPEWRITER_SPEED = 15; // 每个字符的间隔时间 (ms)
 const TYPEWRITER_DELAY = 300; // 展开动画后的延迟 (ms)
 
 interface CmdboxForOnboardingProps {
@@ -239,51 +239,49 @@ export default function CmdboxForOnboarding({ isExpanded }: CmdboxForOnboardingP
   const [displayText, setDisplayText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const shouldReduceMotion = useReducedMotion();
-  const hasStartedRef = useRef(false);
-  const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutIdsRef = useRef<NodeJS.Timeout[]>([]);
 
   // 自动调整文本区域高度
-  const adjustHeight = useCallback(() => {
+  useEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
     textarea.style.height = "auto";
     textarea.style.height = `${Math.min(textarea.scrollHeight, 400)}px`;
-  }, []);
+  }, [displayText]);
 
+  // 打字机动画 - 当 isExpanded 变为 true 时触发
   useEffect(() => {
-    adjustHeight();
-  }, [displayText, adjustHeight]);
+    // 清理之前的定时器
+    timeoutIdsRef.current.forEach(id => clearTimeout(id));
+    timeoutIdsRef.current = [];
 
-  // 打字机效果 - 当 isExpanded 变为 true 时触发
-  useEffect(() => {
-    if (!isExpanded || hasStartedRef.current) return;
-    
-    hasStartedRef.current = true;
-    
+    // 如果不展开，重置文本并退出
+    if (!isExpanded) {
+      setDisplayText("");
+      return;
+    }
+
+    // 重置文本
+    setDisplayText("");
+
     // 如果用户偏好减少动画，直接显示全部文字
     if (shouldReduceMotion) {
       setDisplayText(TYPEWRITER_TEXT);
       return;
     }
 
-    let currentIndex = 1;
+    // 逐字显示
+    for (let i = 0; i < TYPEWRITER_TEXT.length; i++) {
+      const timeoutId = setTimeout(() => {
+        setDisplayText(TYPEWRITER_TEXT.slice(0, i + 1));
+      }, TYPEWRITER_DELAY + i * TYPEWRITER_SPEED);
+      timeoutIdsRef.current.push(timeoutId);
+    }
 
-    const typeNextChar = () => {
-      setDisplayText(TYPEWRITER_TEXT.slice(0, currentIndex));
-      currentIndex++;
-      
-      if (currentIndex <= TYPEWRITER_TEXT.length) {
-        timeoutIdRef.current = setTimeout(typeNextChar, TYPEWRITER_SPEED);
-      }
-    };
-
-    // 延迟后开始打字
-    timeoutIdRef.current = setTimeout(typeNextChar, TYPEWRITER_DELAY);
-
+    // 清理函数
     return () => {
-      if (timeoutIdRef.current) {
-        clearTimeout(timeoutIdRef.current);
-      }
+      timeoutIdsRef.current.forEach(id => clearTimeout(id));
+      timeoutIdsRef.current = [];
     };
   }, [isExpanded, shouldReduceMotion]);
 
@@ -294,7 +292,11 @@ export default function CmdboxForOnboarding({ isExpanded }: CmdboxForOnboardingP
       style={{
         transitionTimingFunction: "cubic-bezier(0.215, 0.61, 0.355, 1)",
       }}
-      initial={false}
+      initial={{
+        padding: 0,
+        paddingBottom: 0,
+        borderRadius: CMDBOX_BORDER_RADIUS,
+      }}
       animate={{
         padding: isExpanded ? 8 : 0,
         paddingBottom: isExpanded ? 10 : 0,
@@ -308,7 +310,7 @@ export default function CmdboxForOnboarding({ isExpanded }: CmdboxForOnboardingP
       {/* Blur Layer Background - 放在外层，z-index 低于内部容器 */}
       <motion.div
         className="absolute blur-[25px] h-[126px] left-[20px] right-[20px] rounded-[999px] top-[51px] z-1 overflow-hidden pointer-events-none"
-        initial={false}
+        initial={{ opacity: 0 }}
         animate={{
           opacity: isExpanded ? 0.75 : 0,
         }}
@@ -439,7 +441,7 @@ export default function CmdboxForOnboarding({ isExpanded }: CmdboxForOnboardingP
       <motion.div
         className="relative flex items-center justify-end px-4 overflow-hidden"
         style={{ width: CMDBOX_WIDTH }}
-        initial={false}
+        initial={{ height: 0, opacity: 0 }}
         animate={{
           height: isExpanded ? "auto" : 0,
           opacity: isExpanded ? 1 : 0,
