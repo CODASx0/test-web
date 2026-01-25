@@ -1,219 +1,502 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
-// 动画曲线
+// 动画曲线 - 参考 dialog.tsx
 const EASE_OUT_CUBIC = [0.215, 0.61, 0.355, 1] as const;
-const EASE_IN_CUBIC = [0.55, 0.055, 0.675, 0.19] as const;
 
-// 动画配置
+// 动画配置 - 复刻 dialog.tsx 的参数
 const ANIMATION_CONFIG = {
-  bubbleDelayStep: 0.08, // 每个 bubble 之间的延迟
+  bubbleDelayStep: 0.12, // 每个 bubble 之间的延迟
   initialDelay: 0.3, // 初始延迟
+  springStiffness: 400, // spring 弹簧刚度
+  springDamping: 30, // spring 阻尼
+  dialogStepInterval: 1.2, // 左侧面板步骤间隔
 };
 
-// SVG 图标组件
-function CloseIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <path
-        d="M13.5 4.5L4.5 13.5M4.5 4.5L13.5 13.5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
+// 左侧面板任务项配置
+const DIALOG_TASKS = [
+  { id: "task1", text: "Picking the right visuals with Nano Banana Pro and more." },
+  { id: "task2", text: "Bringing scenes to life with Veo3, Keling 2.6 Pro and more." },
+  { id: "task3", text: "Putting it all together." },
+  { id: "task4", text: "Watch the preview." },
+];
+
+// 第二页任务
+const DIALOG_TASKS_PAGE2 = [
+  { id: "task1-p2", text: "Try to modify the content through language descriptions." },
+  { id: "task2-p2", text: "Click the send button and wait for the result." },
+];
+
+// 进度条值映射
+const PROGRESS_VALUES = ["0", "25", "50", "75", "100", "inactive"] as const;
+type ProgressValue = typeof PROGRESS_VALUES[number];
+
+// 进度条动画配置
+const PROGRESS_CONFIG = {
+  pxPerSecond: 12, // 每秒增长 20px
+  stopBeforeTarget: 3, // 在目标值前 3% 停止
+  transitionLerpFactor: 0.12, // 平滑过渡的 lerp 系数
+};
+
+// 进度条组件 - 持续增长动画
+interface ProgressBarProps {
+  value: ProgressValue;
+  className?: string;
+  isStatic?: boolean; // 是否静止（不执行动画）
 }
 
-function CheckIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path
-        d="M13.3337 4L6.00033 11.3333L2.66699 8"
-        stroke="#0EA841"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
+function ProgressBar({ value, className, isStatic = false }: ProgressBarProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [currentWidth, setCurrentWidth] = useState(0);
+  const animationRef = useRef<number | null>(null);
+  const lastTimeRef = useRef<number>(0);
+  const prevTargetRef = useRef<number>(0);
+  const isTransitioningRef = useRef<boolean>(false);
 
-function ArticleIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path
-        d="M4.66699 4.66667H11.3337M4.66699 7.33333H11.3337M4.66699 10H8.66699"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
+  // 当前 step 对应的目标值
+  const targetMap: Record<ProgressValue, number> = {
+    "0": 0,
+    "25": 25,
+    "50": 50,
+    "75": 75,
+    "100": 100,
+    "inactive": 100,
+  };
 
-function ImageIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <rect
-        x="2"
-        y="3"
-        width="12"
-        height="10"
-        rx="2"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <circle cx="5.5" cy="6.5" r="1" fill="currentColor" />
-      <path
-        d="M2 11L5 8L7 10L10 7L14 11"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
+  // 下一个 step 的目标值（用于确定停止点）
+  const nextTargetMap: Record<ProgressValue, number> = {
+    "0": 25,
+    "25": 50,
+    "50": 75,
+    "75": 100,
+    "100": 100,
+    "inactive": 100,
+  };
 
-function VideoIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <rect
-        x="2"
-        y="3"
-        width="12"
-        height="10"
-        rx="2"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M6.5 6L10.5 8L6.5 10V6Z"
-        fill="currentColor"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
+  const currentTarget = targetMap[value];
+  const nextTarget = nextTargetMap[value];
+  const isInactive = value === "inactive";
 
-function PlusIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <path
-        d="M9 3.75V14.25M3.75 9H14.25"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
+  // 监听目标值变化，触发平滑过渡
+  useEffect(() => {
+    if (currentTarget !== prevTargetRef.current) {
+      isTransitioningRef.current = true;
+      prevTargetRef.current = currentTarget;
+    }
+  }, [currentTarget]);
 
-function ModelIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <circle cx="9" cy="9" r="3" stroke="currentColor" strokeWidth="1.5" />
-      <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2 2" />
-    </svg>
-  );
-}
+  useEffect(() => {
+    // 如果是静止状态
+    if (isStatic) {
+      // inactive 状态下应该是 100% 宽度，否则是 0%
+      setCurrentWidth(isInactive ? 100 : 0);
+      return;
+    }
 
-function SendIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-      <path
-        d="M7 2.625V11.375M7 2.625L3.5 6.125M7 2.625L10.5 6.125"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
+    const container = containerRef.current;
+    if (!container) return;
 
-// Loading Spinner 组件
-function LoadingSpinner() {
+    const animate = (time: number) => {
+      if (!lastTimeRef.current) lastTimeRef.current = time;
+      const deltaTime = (time - lastTimeRef.current) / 1000;
+      lastTimeRef.current = time;
+
+      const containerWidth = container.offsetWidth;
+      if (containerWidth === 0) {
+        animationRef.current = requestAnimationFrame(animate);
+        return;
+      }
+
+      // 每秒增长的百分比
+      const percentPerSecond = (PROGRESS_CONFIG.pxPerSecond / containerWidth) * 100;
+      // 停止点：在下一个目标值前停止
+      const stopPoint = Math.max(currentTarget, nextTarget - PROGRESS_CONFIG.stopBeforeTarget);
+
+      setCurrentWidth((prev) => {
+        // 如果正在平滑过渡到当前目标值
+        if (isTransitioningRef.current) {
+          const diff = currentTarget - prev;
+          if (Math.abs(diff) < 0.3) {
+            isTransitioningRef.current = false;
+            return currentTarget;
+          }
+          return prev + diff * PROGRESS_CONFIG.transitionLerpFactor;
+        }
+
+        // 正常增长模式：以固定速度增长，在停止点前停止
+        if (prev < stopPoint) {
+          const newValue = prev + percentPerSecond * deltaTime;
+          return Math.min(newValue, stopPoint);
+        }
+
+        return prev;
+      });
+
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    animationRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+      lastTimeRef.current = 0;
+    };
+  }, [currentTarget, nextTarget, isStatic, isInactive]);
+
   return (
-    <div className="size-[18px] relative">
-      <motion.div
-        className="absolute inset-0 border-2 border-zinc-200 border-t-zinc-600 rounded-full"
-        animate={{ rotate: 360 }}
-        transition={{
-          duration: 0.8,
-          repeat: Infinity,
-          ease: "linear",
-        }}
+    <div
+      ref={containerRef}
+      className={`bg-[#f4f4f5] flex-1 h-full rounded-full overflow-hidden relative ${className || ""}`}
+    >
+      {/* 进度条填充 */}
+      <div
+        className={`absolute inset-y-0 left-0 rounded-full transition-colors duration-300 ${
+          isInactive ? "bg-[rgba(134,61,251,0.16)]" : "bg-[#863dfb]"
+        }`}
+        style={{ width: `${currentWidth}%` }}
       />
     </div>
   );
 }
 
-// 工具使用状态组件
-interface ToolUseProps {
-  icon: React.ReactNode;
-  text: string;
-  completed?: boolean;
+// 圆圈图标（等待中）
+function CircleIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <circle cx="8" cy="8" r="6" stroke="#3f3f46" strokeWidth="1.5" />
+    </svg>
+  );
 }
 
-function ToolUse({ icon, text, completed = false }: ToolUseProps) {
+// 勾选图标（已完成）
+function CheckCircleIcon() {
   return (
-    <div className="flex items-center gap-2 px-3 py-2 bg-[#f4f4f5] border border-[#e4e4e7] rounded-xl">
-      <span className="opacity-60 text-[#3f3f46]">{icon}</span>
-      <span
-        className="text-xs font-medium text-[#3f3f46] opacity-60 tracking-[0.2px]"
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path
+        d="M8 1.5C4.41015 1.5 1.5 4.41015 1.5 8C1.5 11.5899 4.41015 14.5 8 14.5C11.5899 14.5 14.5 11.5899 14.5 8C14.5 4.41015 11.5899 1.5 8 1.5Z"
+        fill="#3f3f46"
+      />
+      <path
+        d="M11 6L7 10L5 8"
+        stroke="white"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+// 加载进度指示器（正在进行）
+function LoadingSpinner() {
+  return (
+    <motion.svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      animate={{ rotate: 360 }}
+      transition={{
+        duration: 1,
+        repeat: Infinity,
+        ease: "linear",
+      }}
+    >
+      <circle
+        cx="8"
+        cy="8"
+        r="6"
+        stroke="#3f3f46"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeDasharray="28.27"
+        strokeDashoffset="21.2"
+      />
+    </motion.svg>
+  );
+}
+
+// 任务项组件
+interface TaskItemProps {
+  text: string;
+  isCompleted: boolean;
+  isActive: boolean; // 正在进行中（显示 loading）
+  isPending?: boolean; // 待加载状态（空心圆但 opacity 100%）
+}
+
+function TaskItem({ text, isCompleted, isActive, isPending = false }: TaskItemProps) {
+  // 计算 opacity：
+  // - 正在进行中（isActive）或待加载（isPending）：100%
+  // - 已完成和等待中：30%
+  const opacity = (isActive || isPending) && !isCompleted ? 1 : 0.3;
+
+  // 渲染图标：已完成=勾选，正在进行=加载器，待加载/等待中=空心圆
+  const renderIcon = () => {
+    if (isCompleted) {
+      return <CheckCircleIcon />;
+    }
+    if (isActive) {
+      return <LoadingSpinner />;
+    }
+    // isPending 或等待中都显示空心圆
+    return <CircleIcon />;
+  };
+
+  return (
+    <motion.div
+      className="flex gap-2.5 items-start relative shrink-0 w-full"
+      animate={{ opacity }}
+      transition={{ duration: 0.2, ease: EASE_OUT_CUBIC }}
+    >
+      <div className="flex flex-col items-start justify-center pt-0.5 relative shrink-0">
+        <motion.div
+          initial={false}
+          animate={{ scale: isCompleted ? [1, 1.2, 1] : 1 }}
+          transition={{ duration: 0.2 }}
+        >
+          {renderIcon()}
+        </motion.div>
+      </div>
+      <p
+        className="flex-1 font-medium leading-5 text-[#3f3f46] text-sm tracking-[0.2px]"
         style={{
           fontFamily: "var(--font-manrope, Manrope, sans-serif)",
           fontFeatureSettings: "'zero'",
         }}
       >
         {text}
-      </span>
-      {completed && <CheckIcon />}
+      </p>
+    </motion.div>
+  );
+}
+
+// 左侧 OnboardingDialog 组件
+interface OnboardingDialogProps {
+  currentStep: number;
+  isPage2: boolean;
+  isPage2Started: boolean; // 第二页动画是否已开始
+  onNextStepClick: () => void; // Next Step 按钮点击回调
+}
+
+function OnboardingDialog({ currentStep, isPage2, isPage2Started, onNextStepClick }: OnboardingDialogProps) {
+  // 第一页：进度条1 动画，步骤 0-4 对应 0%/25%/50%/75%/100%
+  // 第二页：进度条1 显示 inactive 状态
+  const progress1Value = isPage2 ? "inactive" : (PROGRESS_VALUES[currentStep] || "0");
+  
+  // 第二页进度条2 的值映射（2个任务: 0%, 50%, 100%）
+  const PAGE2_PROGRESS_VALUES = ["0", "50", "100"] as const;
+  // 第二页未开始时保持 0%
+  const progress2Value = isPage2 && isPage2Started ? (PAGE2_PROGRESS_VALUES[currentStep] || "0") : "0";
+  
+  const tasks = isPage2 ? DIALOG_TASKS_PAGE2 : DIALOG_TASKS;
+  const title = isPage2 ? "Want to tweak it? Just say the word." : "Sit back. We're on it.";
+  // 按钮激活条件：第二页且动画未开始
+  const isButtonEnabled = isPage2 && !isPage2Started;
+
+  return (
+    <div className="bg-[#fafafa] border-[0.5px] border-[#d4d4d8] flex flex-col h-[413px] items-end overflow-hidden relative rounded-[24px] shadow-[0px_6px_2px_0px_rgba(0,0,0,0),0px_4px_1px_0px_rgba(0,0,0,0.01),0px_2px_1px_0px_rgba(0,0,0,0.03),0px_1px_1px_0px_rgba(0,0,0,0.04)] shrink-0 w-[376px]">
+      {/* Header */}
+      <div className="bg-white flex flex-col gap-5 items-start justify-center pb-2 pt-8 px-8 relative shrink-0 w-full z-[3]">
+        {/* Progress bars */}
+        <div className="flex gap-3 h-2 items-start relative shrink-0 w-full">
+          {/* 进度条1：第一页时动画，第二页时静态显示 inactive */}
+          <ProgressBar value={progress1Value as ProgressValue} isStatic={isPage2} />
+          {/* 进度条2：第一页时静态，第二页开始后动画 */}
+          <ProgressBar value={progress2Value as ProgressValue} isStatic={!isPage2 || !isPage2Started} />
+        </div>
+        {/* Title - 居左对齐 */}
+        <div className="flex items-center relative shrink-0 w-full">
+          <motion.h2
+            key={title}
+            className="flex-1 font-semibold text-2xl text-[#09090b] tracking-normal leading-8"
+            style={{
+              fontFamily: "var(--font-nohemi, sans-serif)",
+              fontFeatureSettings: "'zero'",
+            }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, ease: EASE_OUT_CUBIC }}
+          >
+            {title}
+          </motion.h2>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="bg-gradient-to-b from-white to-[#fafafa] flex flex-1 flex-col gap-2 items-start overflow-hidden pb-8 pt-2.5 px-8 relative w-full z-[2]">
+        {/* Task items */}
+        {tasks.map((task, index) => {
+          // 对于第一页：计算当前任务是否已完成或活跃
+          // 对于第二页：需要考虑 isPage2Started 状态
+          let isCompleted = false;
+          let isActive = false;
+          let isPending = false;
+          
+          if (isPage2) {
+            if (!isPage2Started) {
+              // 第二页未开始：第一个任务是待加载状态（空心圆，opacity 100%）
+              isPending = index === 0;
+            } else {
+              // 第二页已开始：根据 currentStep 计算
+              isCompleted = index < currentStep;
+              isActive = index === currentStep && currentStep < tasks.length;
+            }
+          } else {
+            isCompleted = index < currentStep;
+            // 只有当前正在进行的任务才是活跃的
+            // 步骤 4 时 currentStep >= tasks.length，所有任务都完成但都是灰色
+            isActive = index === currentStep && currentStep < tasks.length;
+          }
+
+          return (
+            <TaskItem
+              key={task.id}
+              text={task.text}
+              isCompleted={isCompleted}
+              isActive={isActive}
+              isPending={isPending}
+            />
+          );
+        })}
+
+        {/* RecommendedLayer - 底部装饰视频层 */}
+        <div className="absolute blur-[25px] bottom-[-36px] h-[40px] left-[34px] right-[34px] opacity-50 rounded-[999px] overflow-hidden">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover pointer-events-none rounded-[999px]"
+          >
+            <source src="/layer.mp4" type="video/mp4" />
+          </video>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="bg-white border-t-[0.5px] border-[#e4e4e7] flex gap-3.5 items-center justify-end p-4 relative shrink-0 w-full z-[1]">
+        <motion.button
+          type="button"
+          disabled={!isButtonEnabled}
+          onClick={isButtonEnabled ? onNextStepClick : undefined}
+          className={`border-[0.5px] flex flex-col h-10 items-center justify-center overflow-hidden relative rounded-xl shrink-0 ${
+            isButtonEnabled
+              ? "border-[rgba(9,9,11,0.12)] bg-[#09090b] cursor-pointer"
+              : "border-[rgba(9,9,11,0.12)] bg-[rgba(9,9,11,0.12)] cursor-not-allowed"
+          }`}
+          animate={{
+            backgroundColor: isButtonEnabled ? "#09090b" : "rgba(9,9,11,0.12)",
+          }}
+          transition={{ duration: 0.2, ease: EASE_OUT_CUBIC }}
+        >
+          <div className="flex gap-1 items-center justify-center pl-6 pr-4 py-3 relative shrink-0 w-full">
+            <span
+              className={`flex flex-col font-medium justify-center relative shrink-0 text-sm text-center tracking-[0.1px] leading-5 ${
+                isButtonEnabled ? "text-white" : "text-[#09090b] opacity-[0.38]"
+              }`}
+              style={{
+                fontFamily: "var(--font-manrope, Manrope, sans-serif)",
+                fontFeatureSettings: "'zero'",
+              }}
+            >
+              Next Step
+            </span>
+            <span className={`flex items-center relative shrink-0 ${isButtonEnabled ? "" : "opacity-[0.38]"}`}>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 14 14"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M5.25 3.5L8.75 7L5.25 10.5"
+                  stroke={isButtonEnabled ? "white" : "#09090b"}
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+          </div>
+          <span className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_0px_1px_1px_0px_rgba(255,255,255,0.2),inset_0px_5px_10px_0px_rgba(255,255,255,0.25)]" />
+        </motion.button>
+      </div>
     </div>
   );
 }
 
-// 动画消息气泡组件 - 复刻 Dialog 中的 bubble 动画效果
-interface AnimatedMessageBubbleProps {
-  children: React.ReactNode;
+// 颜色配置 - 严格还原设计稿
+const USER_BUBBLE_COLOR = "bg-[rgba(134,61,251,0.16)]"; // 用户消息紫色
+const AI_BUBBLE_COLOR = "bg-[rgba(74,68,89,0.08)]"; // AI 消息灰色
+
+
+// 动画 Bubble 组件 - 复刻 dialog.tsx 中的动画参数
+interface MessageBubbleProps {
+  className?: string;
+  style?: React.CSSProperties;
   delay?: number;
   isUser?: boolean;
+  animationKey: number;
   isVisible?: boolean;
-  className?: string;
+  onAnimationStart?: () => void; // 动画开始时的回调
 }
 
-function AnimatedMessageBubble({ 
-  children, 
-  delay = 0, 
-  isUser = false, 
+function MessageBubble({
+  className = "",
+  style,
+  delay = 0,
+  isUser = false,
+  animationKey,
   isVisible = true,
-  className = ""
-}: AnimatedMessageBubbleProps) {
+  onAnimationStart,
+}: MessageBubbleProps) {
+  const hasTriggeredRef = useRef(false);
+
+  // 当 animationKey 变化时重置触发状态
+  useEffect(() => {
+    hasTriggeredRef.current = false;
+  }, [animationKey]);
+
+  // 在 delay 后触发滚动（与动画开始同步）
+  useEffect(() => {
+    if (isVisible && onAnimationStart && !hasTriggeredRef.current) {
+      const timer = setTimeout(() => {
+        hasTriggeredRef.current = true;
+        onAnimationStart();
+      }, delay * 1000); // 与动画 delay 同步
+      return () => clearTimeout(timer);
+    }
+    if (!isVisible) {
+      hasTriggeredRef.current = false;
+    }
+  }, [isVisible, delay, onAnimationStart]);
+
   return (
     <motion.div
+      key={animationKey}
       className={className}
       initial={{ scaleX: 0, y: 20, opacity: 0 }}
-      animate={isVisible ? { scaleX: 1, y: 0, opacity: 1 } : { scaleX: 0, y: 20, opacity: 0 }}
+      animate={
+        isVisible
+          ? { scaleX: 1, y: 0, opacity: 1 }
+          : { scaleX: 0, y: 20, opacity: 0 }
+      }
       transition={{
         scaleX: {
           type: "spring",
-          stiffness: 400,
-          damping: 30,
+          stiffness: ANIMATION_CONFIG.springStiffness,
+          damping: ANIMATION_CONFIG.springDamping,
           delay: isVisible ? delay : 0,
         },
         y: {
           type: "spring",
-          stiffness: 400,
-          damping: 30,
+          stiffness: ANIMATION_CONFIG.springStiffness,
+          damping: ANIMATION_CONFIG.springDamping,
           delay: isVisible ? delay : 0,
         },
         opacity: {
@@ -223,368 +506,433 @@ function AnimatedMessageBubble({
       }}
       style={{
         transformOrigin: isUser ? "right bottom" : "left bottom",
+        ...style,
       }}
-    >
-      {children}
-    </motion.div>
+    />
   );
 }
 
-// 消息气泡组件
-interface MessageBubbleProps {
-  content: string;
-  isUser?: boolean;
-  tags?: string[];
-  delay?: number;
-  isVisible?: boolean;
+// Bubble 配置类型
+type BubbleType = "single" | "grid";
+
+interface SingleBubbleConfig {
+  id: string;
+  type: "single";
+  height: number;
+  width: number | "full";
+  isUser: boolean;
 }
 
-function MessageBubble({ content, isUser = false, tags, delay = 0, isVisible = true }: MessageBubbleProps) {
-  return (
-    <div className={`flex flex-col gap-2 ${isUser ? "items-end pl-[68px]" : "items-start max-w-[640px]"}`}>
-      <AnimatedMessageBubble delay={delay} isUser={isUser} isVisible={isVisible}>
-        <div
-          className={`px-4 py-3 rounded-xl max-w-[640px] ${
-            isUser
-              ? "bg-[rgba(134,61,251,0.16)] border border-[rgba(9,9,11,0.08)]"
-              : ""
-          }`}
-        >
-          <p
-            className={`text-sm font-medium leading-6 tracking-[0.2px] ${
-              isUser ? "text-[#2c0051]" : "text-[#09090b]"
-            }`}
-            style={{
-              fontFamily: "var(--font-manrope, Manrope, sans-serif)",
-              fontFeatureSettings: "'zero'",
-            }}
-          >
-            {content}
-          </p>
-        </div>
-      </AnimatedMessageBubble>
-      {tags && tags.length > 0 && (
-        <AnimatedMessageBubble delay={delay + 0.05} isUser={isUser} isVisible={isVisible}>
-          <div className="flex flex-wrap gap-1 items-center justify-end w-full">
-            {tags.map((tag, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-0.5 px-2 py-1 bg-[#f4f4f5] border border-[#e4e4e7] rounded-lg"
-              >
-                <span
-                  className="text-[11px] font-medium text-[#3f3f46] opacity-60 tracking-[0.3px]"
-                  style={{
-                    fontFamily: "var(--font-manrope, Manrope, sans-serif)",
-                    fontFeatureSettings: "'zero'",
-                  }}
-                >
-                  {tag}
-                </span>
-              </div>
-            ))}
-          </div>
-        </AnimatedMessageBubble>
-      )}
-    </div>
-  );
+interface GridBubbleConfig {
+  id: string;
+  type: "grid";
+  height: number; // 整个 grid 的高度
+  cols: number;
+  rows: number;
 }
 
-// 媒体网格组件
-function MediaGrid() {
-  // 示例图片占位符
-  const placeholderImages = Array(9).fill(null);
+type BubbleConfig = SingleBubbleConfig | GridBubbleConfig;
 
-  return (
-    <div className="grid grid-cols-3 gap-1 w-full">
-      {placeholderImages.map((_, index) => (
-        <div
-          key={index}
-          className="aspect-video bg-[#e4e4e7] rounded-xl overflow-hidden relative group cursor-pointer"
-        >
-          <div className="absolute inset-0 bg-linear-to-br from-zinc-300 to-zinc-200" />
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <div className="flex gap-1">
-              <div className="size-6 bg-[#09090b] rounded-lg flex items-center justify-center">
-                <PlusIcon />
-              </div>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+// 消息组配置
+interface MessageGroupConfig {
+  id: string;
+  isUserGroup: boolean; // 用户消息组（右对齐，有 pl-48）
+  bubbles: BubbleConfig[];
+  linkedToStep: number; // 关联的 step（当该 step 开始时显示）
+  page: 1 | 2; // 所属页面
 }
 
-// 状态指示器组件
-interface StateIndicatorProps {
-  text: string;
-  isAnimating?: boolean;
-}
+// ===== 第一页气泡配置 =====
+// p1-item-1-user: 用户消息
+const p1Item1User: MessageGroupConfig = {
+  id: "p1-item-1-user",
+  isUserGroup: true,
+  linkedToStep: 0,
+  page: 1,
+  bubbles: [
+    { id: "p1-item-1-user-bubble", type: "single", height: 54, width: "full", isUser: true },
+  ],
+};
 
-function StateIndicator({ text, isAnimating = true }: StateIndicatorProps) {
-  return (
-    <motion.div
-      className="flex items-center gap-2 py-2 px-2"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: EASE_OUT_CUBIC }}
-    >
-      <LoadingSpinner />
-      <div className="flex items-center overflow-hidden">
-        <motion.span
-          className="text-xs font-medium text-[#3f3f46] tracking-[0.2px] whitespace-nowrap"
-          style={{
-            fontFamily: "var(--font-manrope, Manrope, sans-serif)",
-            fontFeatureSettings: "'zero'",
-          }}
-          animate={
-            isAnimating
-              ? {
-                  backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-                }
-              : {}
-          }
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-        >
-          {text}
-        </motion.span>
-      </div>
-    </motion.div>
-  );
-}
+// p1-item-1-ai: AI 回复（大段消息 + 标签 + 网格 + 标签 + 网格）
+const p1Item1Ai: MessageGroupConfig = {
+  id: "p1-item-1-ai",
+  isUserGroup: false,
+  linkedToStep: 0,
+  page: 1,
+  bubbles: [
+    { id: "p1-item-1-ai-1", type: "single", height: 178, width: "full", isUser: false },
+    { id: "p1-item-1-ai-2", type: "single", height: 33, width: 125, isUser: false },
+    { id: "p1-item-1-ai-grid-1", type: "grid", height: 228, cols: 3, rows: 2 },
+    { id: "p1-item-1-ai-3", type: "single", height: 33, width: 125, isUser: false },
+    { id: "p1-item-1-ai-grid-2", type: "grid", height: 228, cols: 3, rows: 2 },
+  ],
+};
+
+// p1-item-2-ai: AI 回复（消息 + 标签 + 网格 + 标签 + 网格）
+const p1Item2Ai: MessageGroupConfig = {
+  id: "p1-item-2-ai",
+  isUserGroup: false,
+  linkedToStep: 1,
+  page: 1,
+  bubbles: [
+    { id: "p1-item-2-ai-1", type: "single", height: 75, width: "full", isUser: false },
+    { id: "p1-item-2-ai-2", type: "single", height: 33, width: 125, isUser: false },
+    { id: "p1-item-2-ai-grid-1", type: "grid", height: 228, cols: 3, rows: 2 },
+    { id: "p1-item-2-ai-3", type: "single", height: 33, width: 125, isUser: false },
+    { id: "p1-item-2-ai-grid-2", type: "grid", height: 228, cols: 3, rows: 2 },
+  ],
+};
+
+// p1-item-3-ai: AI 回复（标签 + 消息）
+const p1Item3Ai: MessageGroupConfig = {
+  id: "p1-item-3-ai",
+  isUserGroup: false,
+  linkedToStep: 2,
+  page: 1,
+  bubbles: [
+    { id: "p1-item-3-ai-1", type: "single", height: 33, width: 125, isUser: false },
+    { id: "p1-item-3-ai-2", type: "single", height: 180, width: "full", isUser: false },
+  ],
+};
+
+// ===== 第二页气泡配置 =====
+// p2-item-1-user: 用户消息
+const p2Item1User: MessageGroupConfig = {
+  id: "p2-item-1-user",
+  isUserGroup: true,
+  linkedToStep: 0,
+  page: 2,
+  bubbles: [
+    { id: "p2-item-1-user-bubble", type: "single", height: 54, width: "full", isUser: true },
+  ],
+};
+
+// p2-item-2-ai: AI 回复
+const p2Item2Ai: MessageGroupConfig = {
+  id: "p2-item-2-ai",
+  isUserGroup: false,
+  linkedToStep: 1,
+  page: 2,
+  bubbles: [
+    { id: "p2-item-2-ai-1", type: "single", height: 75, width: "full", isUser: false },
+    { id: "p2-item-2-ai-2", type: "single", height: 33, width: 125, isUser: false },
+    { id: "p2-item-2-ai-grid-1", type: "grid", height: 228, cols: 3, rows: 2 },
+    { id: "p2-item-2-ai-3", type: "single", height: 33, width: 125, isUser: false },
+    { id: "p2-item-2-ai-grid-2", type: "grid", height: 228, cols: 3, rows: 2 },
+  ],
+};
+
+// 所有消息组
+const ALL_MESSAGE_GROUPS: MessageGroupConfig[] = [
+  p1Item1User,
+  p1Item1Ai,
+  p1Item2Ai,
+  p1Item3Ai,
+  p2Item1User,
+  p2Item2Ai,
+];
+
 
 interface ChatPanelProps {
   isVisible: boolean;
+  isOnboardingDialogVisible?: boolean; // 左侧 dialog 是否可见
+  onProgress2Complete?: () => void; // 进度2完成回调
 }
 
-export default function ChatPanel({ isVisible }: ChatPanelProps) {
-  const [inputValue, setInputValue] = useState("");
-  const [showMessages, setShowMessages] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+export default function ChatPanel({ isVisible, isOnboardingDialogVisible = true, onProgress2Complete }: ChatPanelProps) {
+  const [animationKey, setAnimationKey] = useState(0);
+  const [isAnimationStarted, setIsAnimationStarted] = useState(false); // 动画是否已开始
+  
+  // 左侧面板动画状态
+  const [dialogStep, setDialogStep] = useState(0); // 0-4: 任务步骤
+  const [isDialogPage2, setIsDialogPage2] = useState(false);
+  const [isPage2Started, setIsPage2Started] = useState(false); // 第二页动画是否已开始
+  
+  // 存储第二页动画的 timeouts，以便在点击按钮时启动
+  const page2TimeoutsRef = useRef<NodeJS.Timeout[]>([]);
+  
+  // 滚动容器和 bubble refs
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const bubbleRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  // 自动滚动到底部
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // 根据当前状态判断消息组是否应该显示
+  const shouldShowGroup = useCallback((group: MessageGroupConfig) => {
+    // 第一页的消息
+    if (group.page === 1) {
+      if (!isDialogPage2) {
+        // 还在第一页，需要动画已开始且 step 达到
+        if (!isAnimationStarted) return false;
+        return group.linkedToStep <= dialogStep;
+      } else {
+        // 已切换到第二页，第一页所有消息都应该显示
+        return true;
+      }
+    }
+    
+    // 第二页的消息：只有在第二页且动画已开始时才显示
+    if (group.page === 2) {
+      if (!isDialogPage2) return false;
+      if (!isPage2Started) return false;
+      return group.linkedToStep <= dialogStep;
+    }
+    
+    return false;
+  }, [dialogStep, isDialogPage2, isPage2Started, isAnimationStarted]);
+
+  // 计算气泡的延迟 - 每个消息组从 0 开始
+  // bubbleIndex: 该气泡在消息组中的索引
+  const getBubbleDelay = useCallback((bubbleIndex: number) => {
+    return bubbleIndex * ANIMATION_CONFIG.bubbleDelayStep;
   }, []);
 
-  // 当面板可见时，延迟触发消息动画
+  // 滚动到最新的 bubble - 让气泡底部对齐到容器底部（留 padding）
+  const scrollToLatestBubble = useCallback((bubbleId: string) => {
+    requestAnimationFrame(() => {
+      const container = scrollContainerRef.current;
+      const bubbleElement = bubbleRefs.current.get(bubbleId);
+      if (!container || !bubbleElement) return;
+      
+      const containerRect = container.getBoundingClientRect();
+      const bubbleRect = bubbleElement.getBoundingClientRect();
+      
+      // 气泡底部在容器内的位置
+      const bubbleBottomInContainer = bubbleRect.bottom - containerRect.top + container.scrollTop;
+      
+      // 目标滚动位置：气泡底部对齐到容器底部，留 24px padding
+      const padding = 24;
+      const targetScrollTop = bubbleBottomInContainer - container.clientHeight + padding;
+      
+      // 只有需要向下滚动时才滚动
+      if (targetScrollTop > container.scrollTop) {
+        container.scrollTo({
+          top: targetScrollTop,
+          behavior: "smooth",
+        });
+      }
+    });
+  }, []);
+
+  // 注册 bubble ref
+  const registerBubbleRef = useCallback((id: string, element: HTMLDivElement | null) => {
+    if (element) {
+      bubbleRefs.current.set(id, element);
+    } else {
+      bubbleRefs.current.delete(id);
+    }
+  }, []);
+
+  // Next Step 按钮点击处理
+  const handleNextStepClick = useCallback(() => {
+    if (!isDialogPage2 || isPage2Started) return;
+    
+    setIsPage2Started(true);
+    
+    // 清除之前的第二页动画 timeouts
+    page2TimeoutsRef.current.forEach(clearTimeout);
+    page2TimeoutsRef.current = [];
+    
+    // 启动第二页动画
+    // 步骤 1: 第二页进度 50%
+    page2TimeoutsRef.current.push(setTimeout(() => {
+      setDialogStep(1);
+    }, ANIMATION_CONFIG.dialogStepInterval * 1000));
+
+    // 步骤 2: 第二页进度 100%
+    page2TimeoutsRef.current.push(setTimeout(() => {
+      setDialogStep(2);
+    }, ANIMATION_CONFIG.dialogStepInterval * 2 * 1000));
+
+    // 进度2完成后延迟 0.5s 触发回调
+    page2TimeoutsRef.current.push(setTimeout(() => {
+      onProgress2Complete?.();
+    }, (ANIMATION_CONFIG.dialogStepInterval * 2 + 0.5) * 1000));
+  }, [isDialogPage2, isPage2Started, onProgress2Complete]);
+
+  // 动画序列 - 第一页自动播放，第二页等待用户点击
+  const runAnimationSequence = useCallback(() => {
+    // 重置状态
+    setDialogStep(0);
+    setIsDialogPage2(false);
+    setIsPage2Started(false);
+    setIsAnimationStarted(false);
+    
+    // 清除第二页的 timeouts
+    page2TimeoutsRef.current.forEach(clearTimeout);
+    page2TimeoutsRef.current = [];
+    
+    // 重置滚动位置
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+
+    const timeouts: NodeJS.Timeout[] = [];
+
+    // 初始延迟后开始动画
+    timeouts.push(setTimeout(() => {
+      setIsAnimationStarted(true);
+    }, ANIMATION_CONFIG.initialDelay * 1000));
+
+    // 左侧面板步骤动画 - 第一页（4 个任务，5 个步骤 0-4）
+    // 步骤 1: 25% 进度
+    timeouts.push(setTimeout(() => {
+      setDialogStep(1);
+    }, (ANIMATION_CONFIG.initialDelay + ANIMATION_CONFIG.dialogStepInterval) * 1000));
+
+    // 步骤 2: 50% 进度
+    timeouts.push(setTimeout(() => {
+      setDialogStep(2);
+    }, (ANIMATION_CONFIG.initialDelay + ANIMATION_CONFIG.dialogStepInterval * 2) * 1000));
+
+    // 步骤 3: 75% 进度
+    timeouts.push(setTimeout(() => {
+      setDialogStep(3);
+    }, (ANIMATION_CONFIG.initialDelay + ANIMATION_CONFIG.dialogStepInterval * 3) * 1000));
+
+    // 步骤 4: 100% 进度
+    timeouts.push(setTimeout(() => {
+      setDialogStep(4);
+    }, (ANIMATION_CONFIG.initialDelay + ANIMATION_CONFIG.dialogStepInterval * 4) * 1000));
+
+    // 步骤 5: 切换到第二页（暂停，等待用户点击 Next Step）
+    timeouts.push(setTimeout(() => {
+      setIsDialogPage2(true);
+      setDialogStep(0);
+    }, (ANIMATION_CONFIG.initialDelay + ANIMATION_CONFIG.dialogStepInterval * 5) * 1000));
+
+    // 注意：第二页动画不在这里启动，而是由用户点击 Next Step 按钮触发
+
+    return () => {
+      timeouts.forEach(clearTimeout);
+      page2TimeoutsRef.current.forEach(clearTimeout);
+      page2TimeoutsRef.current = [];
+    };
+  }, []);
+
+  // 当 isVisible 变化时启动动画
   useEffect(() => {
     if (isVisible) {
-      const timer = setTimeout(() => {
-        setShowMessages(true);
-        scrollToBottom();
-      }, ANIMATION_CONFIG.initialDelay * 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setShowMessages(false);
+      const cleanup = runAnimationSequence();
+      return cleanup;
     }
-  }, [isVisible, scrollToBottom]);
-
-  // 计算每个消息元素的延迟
-  const getDelay = (index: number) => index * ANIMATION_CONFIG.bubbleDelayStep;
-
-  // 示例对话数据
-  const messages = [
-    {
-      content: "Show me some good movie shots in 30s.",
-      isUser: true,
-      tags: ["16:9"],
-    },
-  ];
+  }, [isVisible, animationKey, runAnimationSequence]);
 
   return (
-    <motion.div
-      className="w-[376px] h-[700px] bg-[#fafafa] rounded-3xl overflow-hidden flex flex-col shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_0_0_0.5px_rgba(0,0,0,0.03)]"
-      initial={{ opacity: 0, scale: 0.95, y: 20 }}
-      animate={{
-        opacity: isVisible ? 1 : 0,
-        scale: isVisible ? 1 : 0.95,
-        y: isVisible ? 0 : 20,
-      }}
-      transition={{
-        duration: 0.4,
-        ease: EASE_OUT_CUBIC,
-      }}
-    >
-      {/* 标题栏 */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#e4e4e7]/50">
-        <div className="flex items-center gap-2">
-          <span
-            className="text-sm font-medium text-[#09090b] tracking-[0.2px]"
-            style={{
-              fontFamily: "var(--font-manrope, Manrope, sans-serif)",
-              fontFeatureSettings: "'zero'",
-            }}
-          >
-            Updated Video Clips
-          </span>
-          <CheckIcon />
-        </div>
-        <button
-          type="button"
-          className="size-8 flex items-center justify-center rounded-xl bg-[#fafafa] border border-[#e4e4e7] text-[#3f3f46] transition-colors [@media(hover:hover)_and_(pointer:fine)]:hover:bg-zinc-100"
+    <div className="flex gap-3 items-end">
+      {/* 左侧 OnboardingDialog - 从左往右 20px 进入，渐隐退出 */}
+      <motion.div
+        initial={{ x: -20, opacity: 0 }}
+        animate={{
+          x: isOnboardingDialogVisible ? 0 : 0,
+          opacity: isOnboardingDialogVisible ? 1 : 0,
+        }}
+        transition={{
+          duration: 0.3,
+          ease: [0.215, 0.61, 0.355, 1], // ease-out-cubic
+        }}
+      >
+        <OnboardingDialog 
+          currentStep={dialogStep} 
+          isPage2={isDialogPage2}
+          isPage2Started={isPage2Started}
+          onNextStepClick={handleNextStepClick}
+        />
+      </motion.div>
+
+      {/* 右侧 ChatPanel - 精简版，只有消息气泡 */}
+      <div className="bg-[#fafafa] border-[0.5px] border-[#e4e4e7] flex flex-col h-[700px] items-start max-w-[640px] min-w-[240px] overflow-hidden relative rounded-t-[20px] rounded-b-[24px] shrink-0 w-[376px]">
+        {/* 可滚动的消息区域 */}
+        <div
+          ref={scrollContainerRef}
+          className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-4 w-full scrollbar-hide"
         >
-          <CloseIcon />
-        </button>
-      </div>
-
-      {/* 消息区域 */}
-      <div className="flex-1 overflow-y-auto px-3 py-4">
-        <div className="flex flex-col gap-8">
-          {/* 用户消息 */}
-          {messages.map((msg, index) => (
-            <MessageBubble
-              key={index}
-              content={msg.content}
-              isUser={msg.isUser}
-              tags={msg.tags}
-              delay={getDelay(0)}
-              isVisible={showMessages}
-            />
-          ))}
-
-          {/* AI 回复 */}
-          <div className="flex flex-col gap-4 max-w-[640px]">
-            {/* 思考状态 */}
-            <AnimatedMessageBubble delay={getDelay(2)} isVisible={showMessages}>
-              <div className="flex items-center rounded-xl">
-                <span
-                  className="text-xs font-medium text-[#3f3f46] opacity-60 tracking-[0.2px]"
-                  style={{
-                    fontFamily: "var(--font-manrope, Manrope, sans-serif)",
-                    fontFeatureSettings: "'zero'",
-                  }}
+          {/* Message group - 间距 16px */}
+          <div className="flex flex-col gap-4 items-start relative w-full">
+            {ALL_MESSAGE_GROUPS.map((group) => {
+              const isVisible = shouldShowGroup(group);
+              // 每个消息组的气泡从 0 开始计算延迟
+              let bubbleIndexOffset = 0;
+              
+              return (
+                <div
+                  key={`${group.id}-${animationKey}`}
+                  className={`flex flex-col gap-4 relative shrink-0 w-full ${
+                    group.isUserGroup ? "items-end pl-12" : "items-start"
+                  }`}
                 >
-                  Thinking complete
-                </span>
-              </div>
-            </AnimatedMessageBubble>
-
-            {/* AI 文本回复 */}
-            <AnimatedMessageBubble delay={getDelay(3)} isVisible={showMessages}>
-              <p
-                className="text-sm font-medium text-[#09090b] leading-5 tracking-[0.2px]"
-                style={{
-                  fontFamily: "var(--font-manrope, Manrope, sans-serif)",
-                  fontFeatureSettings: "'zero'",
-                }}
-              >
-                I&apos;ll create a 30-second cinematic showcase featuring Oscar-winning film aesthetics with 27 shots. Let me start by planning this project.
-              </p>
-            </AnimatedMessageBubble>
-
-            {/* 工具使用状态 */}
-            <AnimatedMessageBubble delay={getDelay(4)} isVisible={showMessages}>
-              <ToolUse icon={<ArticleIcon />} text="Wrote Script" completed />
-            </AnimatedMessageBubble>
-
-            <AnimatedMessageBubble delay={getDelay(5)} isVisible={showMessages}>
-              <p
-                className="text-sm font-medium text-[#09090b] leading-5 tracking-[0.2px]"
-                style={{
-                  fontFamily: "var(--font-manrope, Manrope, sans-serif)",
-                  fontFeatureSettings: "'zero'",
-                }}
-              >
-                Now I&apos;ll create a task list and begin generating all the visual assets using Gemini 3 Pro (Nano Banana).
-              </p>
-            </AnimatedMessageBubble>
-
-            <AnimatedMessageBubble delay={getDelay(6)} isVisible={showMessages}>
-              <ToolUse icon={<ImageIcon />} text="Generated Images" completed />
-            </AnimatedMessageBubble>
-
-            {/* 媒体网格 */}
-            <AnimatedMessageBubble delay={getDelay(7)} isVisible={showMessages}>
-              <MediaGrid />
-            </AnimatedMessageBubble>
-
-            <AnimatedMessageBubble delay={getDelay(8)} isVisible={showMessages}>
-              <ToolUse icon={<VideoIcon />} text="Updated Video Clips" completed />
-            </AnimatedMessageBubble>
-
-            <AnimatedMessageBubble delay={getDelay(9)} isVisible={showMessages}>
-              <p
-                className="text-sm font-medium text-[#09090b] leading-5 tracking-[0.2px]"
-                style={{
-                  fontFamily: "var(--font-manrope, Manrope, sans-serif)",
-                  fontFeatureSettings: "'zero'",
-                }}
-              >
-                Perfect! Your IMAX-quality Oscar-winning film collection has been remastered!
-              </p>
-            </AnimatedMessageBubble>
-          </div>
-
-          <div ref={messagesEndRef} />
-        </div>
-      </div>
-
-      {/* 渐变遮罩 */}
-      <div className="absolute bottom-[142px] left-3 right-3 h-24 bg-linear-to-t from-[#fafafa] to-transparent pointer-events-none" />
-
-      {/* 底部命令框区域 */}
-      <div className="relative px-3 pb-3">
-        {/* 状态指示器 */}
-        <StateIndicator text="Putting it all together..." />
-
-        {/* 输入框 */}
-        <div className="bg-white border border-[#e4e4e7] rounded-2xl overflow-hidden">
-          {/* 输入区域 */}
-          <div className="px-2 py-2">
-            <input
-              ref={inputRef}
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Ask me anything..."
-              className="w-full bg-transparent text-sm font-medium text-[#09090b] placeholder:text-[#09090b] placeholder:opacity-20 outline-none tracking-[0.2px] px-1.5 py-1"
-              style={{
-                fontFamily: "var(--font-manrope, Manrope, sans-serif)",
-                fontFeatureSettings: "'zero'",
-              }}
-            />
-          </div>
-
-          {/* 操作按钮 */}
-          <div className="flex items-center justify-between px-2 pb-2">
-            <div className="flex items-center gap-1">
-              {/* 添加按钮 */}
-              <button
-                type="button"
-                className="size-8 flex items-center justify-center rounded-[10px] text-[#3f3f46] transition-colors [@media(hover:hover)_and_(pointer:fine)]:hover:bg-zinc-100"
-              >
-                <PlusIcon />
-              </button>
-
-              {/* 模型选择按钮 */}
-              <button
-                type="button"
-                className="size-8 flex items-center justify-center rounded-[10px] text-[#3f3f46] transition-colors [@media(hover:hover)_and_(pointer:fine)]:hover:bg-zinc-100"
-              >
-                <ModelIcon />
-              </button>
-            </div>
-
-            {/* 发送按钮 */}
-            <button
-              type="button"
-              className="size-8 flex items-center justify-center rounded-full bg-[#09090b] text-white transition-transform [@media(hover:hover)_and_(pointer:fine)]:hover:scale-105"
-              style={{
-                boxShadow:
-                  "inset 0px 2px 1px 0px rgba(255,255,255,0.1), inset 0px 4px 10px 0px rgba(255,255,255,0.2)",
-              }}
-            >
-              <SendIcon />
-            </button>
+                  {group.bubbles.map((bubble) => {
+                    const delay = getBubbleDelay(bubbleIndexOffset);
+                    
+                    if (bubble.type === "single") {
+                      bubbleIndexOffset += 1;
+                      const bubbleKey = `${bubble.id}-${animationKey}`;
+                      
+                      return (
+                        <div
+                          key={bubbleKey}
+                          ref={(el) => registerBubbleRef(bubbleKey, el)}
+                          className={bubble.width === "full" ? "w-full" : ""}
+                        >
+                          <MessageBubble
+                            animationKey={animationKey}
+                            className={`${bubble.isUser ? USER_BUBBLE_COLOR : AI_BUBBLE_COLOR} rounded-xl ${
+                              bubble.width === "full" ? "w-full" : ""
+                            }`}
+                            delay={delay}
+                            isUser={bubble.isUser}
+                            isVisible={isVisible}
+                            style={{
+                              height: bubble.height,
+                              width: bubble.width === "full" ? undefined : bubble.width,
+                            }}
+                            onAnimationStart={() => scrollToLatestBubble(bubbleKey)}
+                          />
+                        </div>
+                      );
+                    } else {
+                      // Grid 类型
+                      const gridKey = `${bubble.id}-${animationKey}`;
+                      const gridCells = bubble.cols * bubble.rows;
+                      
+                      const gridContent = (
+                        <div
+                          key={gridKey}
+                          ref={(el) => registerBubbleRef(gridKey, el)}
+                          className={`grid gap-1.5 relative shrink-0 w-full`}
+                          style={{
+                            gridTemplateColumns: `repeat(${bubble.cols}, minmax(0, 1fr))`,
+                            gridTemplateRows: `repeat(${bubble.rows}, minmax(0, 1fr))`,
+                            height: bubble.height,
+                          }}
+                        >
+                          {Array.from({ length: gridCells }).map((_, cellIndex) => {
+                            const cellDelay = getBubbleDelay(bubbleIndexOffset + cellIndex);
+                            return (
+                              <MessageBubble
+                                key={`${bubble.id}-cell-${cellIndex}-${animationKey}`}
+                                animationKey={animationKey}
+                                className={`${AI_BUBBLE_COLOR} rounded-xl h-full`}
+                                delay={cellDelay}
+                                isUser={false}
+                                isVisible={isVisible}
+                                onAnimationStart={cellIndex === 0 ? () => scrollToLatestBubble(gridKey) : undefined}
+                              />
+                            );
+                          })}
+                        </div>
+                      );
+                      
+                      bubbleIndexOffset += gridCells;
+                      return gridContent;
+                    }
+                  })}
+                </div>
+              );
+            })}
           </div>
         </div>
+
       </div>
-    </motion.div>
+    </div>
   );
 }
