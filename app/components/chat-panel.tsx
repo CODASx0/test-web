@@ -8,10 +8,10 @@ const EASE_OUT_CUBIC = [0.215, 0.61, 0.355, 1] as const;
 
 // 动画配置 - 复刻 dialog.tsx 的参数
 const ANIMATION_CONFIG = {
-  bubbleDelayStep: 0.12, // 每个 bubble 之间的延迟
+  bubbleDelayStep: 0.08, // 每个 bubble 之间的延迟
   initialDelay: 0.3, // 初始延迟
-  springStiffness: 400, // spring 弹簧刚度
-  springDamping: 30, // spring 阻尼
+  springDuration: 0.35, // spring 动画时长 (300ms)
+  springBounce: 0.2, // spring 弹性系数
   dialogStepInterval: 1.8, // 左侧面板步骤间隔
 };
 
@@ -489,14 +489,14 @@ function MessageBubble({
       transition={{
         scaleX: {
           type: "spring",
-          stiffness: ANIMATION_CONFIG.springStiffness,
-          damping: ANIMATION_CONFIG.springDamping,
+          duration: ANIMATION_CONFIG.springDuration,
+          bounce: ANIMATION_CONFIG.springBounce,
           delay: isVisible ? delay : 0,
         },
         y: {
           type: "spring",
-          stiffness: ANIMATION_CONFIG.springStiffness,
-          damping: ANIMATION_CONFIG.springDamping,
+          duration: ANIMATION_CONFIG.springDuration,
+          bounce: ANIMATION_CONFIG.springBounce,
           delay: isVisible ? delay : 0,
         },
         opacity: {
