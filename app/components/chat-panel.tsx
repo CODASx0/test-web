@@ -12,7 +12,7 @@ const ANIMATION_CONFIG = {
   initialDelay: 0.3, // 初始延迟
   springStiffness: 400, // spring 弹簧刚度
   springDamping: 30, // spring 阻尼
-  dialogStepInterval: 1.2, // 左侧面板步骤间隔
+  dialogStepInterval: 1.8, // 左侧面板步骤间隔
 };
 
 // 左侧面板任务项配置
@@ -680,10 +680,30 @@ export default function ChatPanel({ isVisible, isOnboardingDialogVisible = true,
     return false;
   }, [dialogStep, isDialogPage2, isPage2Started, isAnimationStarted]);
 
-  // 计算气泡的延迟 - 每个消息组从 0 开始
-  // bubbleIndex: 该气泡在消息组中的索引
-  const getBubbleDelay = useCallback((bubbleIndex: number) => {
-    return bubbleIndex * ANIMATION_CONFIG.bubbleDelayStep;
+  // 计算气泡的延迟 - 同一个 step 中的所有 bubble 顺次出现
+  // group: 当前消息组
+  // bubbleIndexInGroup: 该气泡在当前消息组中的索引
+  const getBubbleDelay = useCallback((group: MessageGroupConfig, bubbleIndexInGroup: number) => {
+    // 找出同一个 step 中，当前组之前的所有组
+    const sameStepGroups = ALL_MESSAGE_GROUPS.filter(
+      g => g.page === group.page && g.linkedToStep === group.linkedToStep
+    );
+    const groupIndexInStep = sameStepGroups.indexOf(group);
+    
+    // 计算当前组之前的所有 bubble 数量
+    let priorBubbles = 0;
+    for (let i = 0; i < groupIndexInStep; i++) {
+      const priorGroup = sameStepGroups[i];
+      for (const bubble of priorGroup.bubbles) {
+        if (bubble.type === "single") {
+          priorBubbles += 1;
+        } else {
+          priorBubbles += bubble.cols * bubble.rows;
+        }
+      }
+    }
+    
+    return (priorBubbles + bubbleIndexInGroup) * ANIMATION_CONFIG.bubbleDelayStep;
   }, []);
 
   // 滚动到最新的 bubble - 让气泡底部对齐到容器底部（留 padding）
@@ -699,8 +719,8 @@ export default function ChatPanel({ isVisible, isOnboardingDialogVisible = true,
       // 气泡底部在容器内的位置
       const bubbleBottomInContainer = bubbleRect.bottom - containerRect.top + container.scrollTop;
       
-      // 目标滚动位置：气泡底部对齐到容器底部，留 24px padding
-      const padding = 24;
+      // 目标滚动位置：气泡底部对齐到容器底部，留 16px padding
+      const padding = 16;
       const targetScrollTop = bubbleBottomInContainer - container.clientHeight + padding;
       
       // 只有需要向下滚动时才滚动
@@ -850,8 +870,8 @@ export default function ChatPanel({ isVisible, isOnboardingDialogVisible = true,
           <div className="flex flex-col gap-4 items-start relative w-full">
             {ALL_MESSAGE_GROUPS.map((group) => {
               const isVisible = shouldShowGroup(group);
-              // 每个消息组的气泡从 0 开始计算延迟
-              let bubbleIndexOffset = 0;
+              // 计算当前组内的气泡索引（用于同 step 顺次出现）
+              let bubbleIndexInGroup = 0;
               
               return (
                 <div
@@ -861,10 +881,10 @@ export default function ChatPanel({ isVisible, isOnboardingDialogVisible = true,
                   }`}
                 >
                   {group.bubbles.map((bubble) => {
-                    const delay = getBubbleDelay(bubbleIndexOffset);
+                    const delay = getBubbleDelay(group, bubbleIndexInGroup);
                     
                     if (bubble.type === "single") {
-                      bubbleIndexOffset += 1;
+                      bubbleIndexInGroup += 1;
                       const bubbleKey = `${bubble.id}-${animationKey}`;
                       
                       return (
@@ -893,6 +913,7 @@ export default function ChatPanel({ isVisible, isOnboardingDialogVisible = true,
                       // Grid 类型
                       const gridKey = `${bubble.id}-${animationKey}`;
                       const gridCells = bubble.cols * bubble.rows;
+                      const startIndex = bubbleIndexInGroup; // 记录 grid 开始时的索引
                       
                       const gridContent = (
                         <div
@@ -906,7 +927,7 @@ export default function ChatPanel({ isVisible, isOnboardingDialogVisible = true,
                           }}
                         >
                           {Array.from({ length: gridCells }).map((_, cellIndex) => {
-                            const cellDelay = getBubbleDelay(bubbleIndexOffset + cellIndex);
+                            const cellDelay = getBubbleDelay(group, startIndex + cellIndex);
                             return (
                               <MessageBubble
                                 key={`${bubble.id}-cell-${cellIndex}-${animationKey}`}
@@ -922,7 +943,7 @@ export default function ChatPanel({ isVisible, isOnboardingDialogVisible = true,
                         </div>
                       );
                       
-                      bubbleIndexOffset += gridCells;
+                      bubbleIndexInGroup += gridCells;
                       return gridContent;
                     }
                   })}
