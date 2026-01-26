@@ -383,6 +383,7 @@ function OnboardingDialog({ currentStep, isPage2, isPage2Started, onNextStepClic
           type="button"
           disabled={!isButtonEnabled}
           onClick={isButtonEnabled ? onNextStepClick : undefined}
+          data-guide-target="next-step"
           className={`border-[0.5px] flex flex-col h-10 items-center justify-center overflow-hidden relative rounded-xl shrink-0 ${
             isButtonEnabled
               ? "border-[rgba(9,9,11,0.12)] bg-[#09090b] cursor-pointer"

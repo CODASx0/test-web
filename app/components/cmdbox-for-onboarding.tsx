@@ -388,6 +388,7 @@ export default function CmdboxForOnboarding({ isExpanded, onGenerate }: CmdboxFo
           <motion.button
             type="button"
             onClick={onGenerate}
+            data-guide-target="generate"
             className="relative flex items-center justify-center rounded-full overflow-hidden shadow-[0px_60px_17px_0px_rgba(100,27,202,0),0px_38px_15px_0px_rgba(100,27,202,0.01),0px_21px_13px_0px_rgba(100,27,202,0.05),0px_10px_10px_0px_rgba(100,27,202,0.09),0px_2px_5px_0px_rgba(100,27,202,0.1)] transition-opacity duration-200 ease-out [@media(hover:hover)_and_(pointer:fine)]:hover:opacity-90"
           >
             {/* Background gradient */}

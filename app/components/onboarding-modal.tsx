@@ -193,6 +193,7 @@ export default function OnboardingModal({ onStartWithRecipe }: OnboardingModalPr
           type="button"
           aria-label="Start with Recipe"
           onClick={onStartWithRecipe}
+          data-guide-target="start-recipe"
           className="bg-[#09090b] border border-[rgba(9,9,11,0.12)]/50 flex flex-col h-10 items-center justify-center overflow-clip relative rounded-xl shrink-0 cursor-pointer transition-opacity duration-200 ease-out [@media(hover:hover)_and_(pointer:fine)]:hover:opacity-90"
         >
           <div className="flex gap-1 items-center justify-center pl-6 pr-4 py-3 relative shrink-0 w-full">

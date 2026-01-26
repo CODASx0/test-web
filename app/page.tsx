@@ -8,6 +8,7 @@ import ChatPanel from "./components/chat-panel";
 import StepController from "./components/step-controller";
 import OnboardingModal from "./components/onboarding-modal";
 import Confetti from "./components/confetti";
+import InteractionGuide from "./components/interaction-guide";
 
 // ease-out-cubic - 用于元素进入/退出
 const EASE_OUT_CUBIC = [0.215, 0.61, 0.355, 1] as const;
@@ -177,6 +178,9 @@ export default function Home() {
 
       {/* Confetti 彩带碎屑效果 - 每次进入 Modal 都重新创建实例 */}
       <Confetti key={confettiKey} isActive={showConfetti} onComplete={handleConfettiComplete} />
+
+      {/* 全局交互引导指示器 - 在步骤 2/3/4 的可点击按钮下方显示 */}
+      <InteractionGuide currentStep={currentStep} />
     </main>
   );
 }
