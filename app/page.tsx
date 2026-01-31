@@ -8,7 +8,12 @@ export default function HomePage() {
       description: "Interactive onboarding experience with step-by-step guidance.",
       slug: "onboarding",
     },
-    // Add more projects here in the future
+    {
+      id: "chatpanel",
+      title: "ChatPanel Demo",
+      description: "AI conversation panel with streaming messages and tool calls.",
+      slug: "chatpanel",
+    },
   ];
 
   return (

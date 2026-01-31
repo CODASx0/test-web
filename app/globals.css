@@ -42,3 +42,295 @@ h2 {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Chrome, Safari and Opera */
 }
+
+/* medeo-fe 动画规格 */
+
+/* Shimmer 动画 - 工具调用/思考加载效果 */
+@keyframes shimmer {
+  0% {
+    background-position: 100% center;
+  }
+  100% {
+    background-position: -100% center;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s linear infinite;
+}
+
+/* 工具调用入场动画 */
+@keyframes toolAnim {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(0.5);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* 模糊入场动画 */
+@keyframes blurIn {
+  from {
+    filter: blur(5px);
+  }
+  to {
+    filter: blur(0px);
+  }
+}
+
+/* 透明度入场动画 */
+@keyframes opacityAnim {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* 旋转动画 */
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==================== Markdown 渲染样式 (medeo-fe Streamdown) ==================== */
+
+.streamdown-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.streamdown-container * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-weight: 400;
+}
+
+.streamdown-container *:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.streamdown-container *:first-child {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.streamdown-container h1,
+.streamdown-container h2,
+.streamdown-container h3,
+.streamdown-container h4,
+.streamdown-container h5,
+.streamdown-container h6 {
+  align-self: stretch;
+  padding: 0;
+  color: #09090b;
+  font-variant-numeric: slashed-zero;
+  font-weight: 500;
+  font-style: normal;
+}
+
+.streamdown-container h1:first-child,
+.streamdown-container h2:first-child,
+.streamdown-container h3:first-child {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.streamdown-container h1 {
+  font-family: var(--font-manrope, Manrope, sans-serif);
+  font-size: 22px;
+  line-height: 28px;
+  letter-spacing: 0;
+}
+
+.streamdown-container h2 {
+  font-family: var(--font-manrope, Manrope, sans-serif);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: 0.15px;
+  padding-top: 4px;
+}
+
+.streamdown-container h3 {
+  font-family: var(--font-manrope, Manrope, sans-serif);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: 0.1px;
+  padding-top: 4px;
+}
+
+.streamdown-container h4,
+.streamdown-container h5,
+.streamdown-container h6 {
+  padding-top: 4px;
+  font-size: 1em;
+}
+
+.streamdown-container hr {
+  margin: 16px 0;
+  border: none;
+  border-top: 0.5px solid #e4e4e7;
+}
+
+.streamdown-container p {
+  font-variant-numeric: slashed-zero;
+  font-family: var(--font-manrope, Manrope, sans-serif);
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: 0.2px;
+}
+
+.streamdown-container strong {
+  font-weight: 500;
+}
+
+.streamdown-container ul {
+  list-style: disc;
+  padding-left: 1.5em;
+}
+
+.streamdown-container ul > li {
+  padding-left: 0;
+}
+
+.streamdown-container ol {
+  list-style: decimal;
+  padding-left: 1.5em;
+}
+
+.streamdown-container ol > li {
+  padding-left: 0;
+}
+
+.streamdown-container li {
+  padding-left: 1.5em;
+  word-wrap: break-word;
+}
+
+.streamdown-container li > p {
+  padding-bottom: 2px;
+}
+
+.streamdown-container blockquote {
+  border-radius: 12px;
+  border: 0.5px solid #e4e4e7;
+  background: #fff;
+  margin: 8px 0;
+  padding: 12px;
+}
+
+.streamdown-container pre {
+  overflow: auto;
+  margin: 8px 0;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px dashed #e4e4e7;
+  background: #fff;
+}
+
+.streamdown-container code {
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 13px;
+}
+
+.streamdown-container img {
+  margin: 0;
+  padding: 0;
+  border: none;
+  outline: none;
+}
+
+.streamdown-container a {
+  display: inline-block;
+  overflow: clip;
+  transform: translateY(-2px);
+  border-radius: 6px;
+  outline: 0.5px solid #e4e4e7;
+  outline-offset: -0.5px;
+  background: #f4f4f5;
+  box-shadow:
+    0 2px 1px 0 rgba(255, 255, 255, 0.25) inset,
+    0 4px 10px 0 rgba(255, 255, 255, 0.4) inset;
+  margin: 0;
+  padding: 3px 6px !important;
+  text-decoration: none;
+  white-space: nowrap;
+  max-width: 120px;
+  color: #3f3f46;
+  font-variant-numeric: slashed-zero;
+  text-overflow: ellipsis;
+  font-family: var(--font-manrope, Manrope, sans-serif);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 12px;
+  letter-spacing: 0.3px;
+}
+
+.streamdown-container a:hover {
+  background: rgba(63, 63, 70, 0.08);
+}
+
+.streamdown-container a:active {
+  background: rgba(9, 9, 11, 0.12);
+}
+
+.streamdown-container table {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  border-spacing: 0;
+  border-collapse: collapse;
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow: auto;
+  font-variant: tabular-nums;
+}
+
+.streamdown-container table th {
+  font-weight: 600;
+}
+
+.streamdown-container table th,
+.streamdown-container table td {
+  padding: 6px 13px;
+  border: 1px solid #d1d9e0;
+}
+
+.streamdown-container table td > *:last-child {
+  margin-bottom: 0;
+}
+
+.streamdown-container table tr {
+  background-color: #ffffff;
+  border-top: 1px solid rgba(209, 217, 224, 0.7);
+}
+
+.streamdown-container table tr:nth-child(2n) {
+  background-color: #f6f8fa;
+}
+
+.streamdown-container table img {
+  background-color: transparent;
+}
